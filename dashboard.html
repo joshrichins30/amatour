@@ -521,7 +521,7 @@
 
 <script>
 // ── CONFIG ──────────────────────────────────────────────────────────────────
-const SHEET_ID = '1mQAlKOgb9Hv22_yE_G9NwtKXh9XLnIpdeiqanGSL4nw';
+const SHEET_ID = '1w8aibm-2SsraIcoFO8X9B-pqi3X3c5P2roQcxqL3b0c';
 
 const EVENTS = [
   { name: 'April 1 – 15',     course: 'Stonebridge (Sunrise)',     type: 'regular',      indivSheet: 'April 1 - 15',      teamSheet: 'Team Event April 1-15' },
@@ -584,7 +584,13 @@ async function loadTeams() {
 async function loadIndivEvent(sheetName) {
   const rows = await fetchSheet(sheetName);
   const players = [];
-  for (let i = 3; i < rows.length; i++) {
+  // Dynamically find header row by looking for "Player Name" in col C
+  let dataStart = 4;
+  for (let i = 0; i < rows.length; i++) {
+    const cell = String(rows[i][2] || '').trim().toLowerCase();
+    if (cell === 'player name') { dataStart = i + 1; break; }
+  }
+  for (let i = dataStart; i < rows.length; i++) {
     const r = rows[i];
     const name = r[2];
     if (!name || typeof name !== 'string' || !name.trim()) continue;
@@ -610,13 +616,19 @@ async function loadTeamEvent(sheetName) {
   try {
     const rows = await fetchSheet(sheetName);
     const teams = [];
-    for (let i = 3; i < rows.length; i++) {
+    // Dynamically find header row by looking for "Team" label in col C
+    let dataStart = 4;
+    for (let i = 0; i < rows.length; i++) {
+      const cell = String(rows[i][2] || '').trim().toLowerCase();
+      if (cell === 'team') { dataStart = i + 1; break; }
+    }
+    for (let i = dataStart; i < rows.length; i++) {
       const r = rows[i];
       const team = r[2];
-      if (!team || typeof team !== 'string' || !team.trim()) continue;
+      if (!team || typeof team !== 'string' || !String(team).trim()) continue;
       const gross = (r[4] === '' || r[4] === null || r[4] === undefined) ? null : Number(r[4]);
       teams.push({
-        team:    team.trim(),
+        team:    String(team).trim(),
         players: r[3] || '',
         gross,
         rank:    r[5] || '',
