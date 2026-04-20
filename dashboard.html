@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The AmaTOUR — 2026 Season</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0f0d;
+    --surface: #111914;
+    --surface2: #182018;
+    --surface3: #1e2a1e;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.14);
+    --text: #e8ede8;
+    --muted: #7a8f7a;
+    --accent: #4ade80;
+    --gold: #fbbf24;
+    --silver: #94a3b8;
+    --bronze: #c97c3a;
+    --blue: #60a5fa;
+    --red: #f87171;
+    --font-display: 'Bebas Neue', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+  }
+
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    font-family: var(--font-display);
+    font-size: 30px;
+    letter-spacing: 4px;
+    color: var(--accent);
+    line-height: 1;
+    user-select: none;
+  }
+
+  .logo-sub {
+    color: var(--muted);
+    font-size: 11px;
+    font-family: var(--font-body);
+    letter-spacing: 2px;
+    font-weight: 300;
+    display: block;
+    margin-top: -3px;
+  }
+
+  .nav { display: flex; gap: 4px; }
+
+  .nav-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 8px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    transition: all 0.15s;
+  }
+
+  .nav-btn:hover { color: var(--text); background: var(--surface2); }
+  .nav-btn.active { color: var(--accent); background: rgba(74,222,128,0.1); }
+
+  .live-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    background: rgba(74,222,128,0.1);
+    border: 1px solid rgba(74,222,128,0.2);
+    border-radius: 20px;
+    padding: 5px 14px;
+    letter-spacing: 1.5px;
+  }
+
+  .live-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* ── PAGES ── */
+  .page { display: none; padding: 32px; max-width: 1140px; margin: 0 auto; }
+  .page.active { display: block; }
+
+  /* ── STAT CARDS ── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+  }
+
+  .stat-label {
+    font-size: 10px;
+    color: var(--muted);
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .stat-value {
+    font-family: var(--font-display);
+    font-size: 36px;
+    color: var(--text);
+    letter-spacing: 1px;
+    line-height: 1;
+  }
+
+  .stat-sub { font-size: 11px; color: var(--muted); margin-top: 5px; }
+
+  /* ── SECTION HEADER ── */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+
+  .section-title {
+    font-family: var(--font-display);
+    font-size: 22px;
+    letter-spacing: 3px;
+    color: var(--text);
+  }
+
+  .refresh-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: var(--font-body);
+    font-size: 12px;
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .refresh-btn:hover { color: var(--text); border-color: var(--border2); }
+
+  /* ── LEADERBOARD TABLE ── */
+  .lb-table {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    width: 100%;
+  }
+
+  .lb-head {
+    display: grid;
+    grid-template-columns: 56px 1fr 110px 90px 70px;
+    padding: 11px 18px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .lb-row {
+    display: grid;
+    grid-template-columns: 56px 1fr 110px 90px 70px;
+    padding: 13px 18px;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+    transition: background 0.1s;
+  }
+
+  .lb-row:last-child { border-bottom: none; }
+  .lb-row:hover { background: var(--surface2); }
+  .lb-row.gold-row { background: rgba(251,191,36,0.05); }
+  .lb-row.silver-row { background: rgba(148,163,184,0.04); }
+  .lb-row.bronze-row { background: rgba(201,124,58,0.04); }
+
+  .team-lb-head {
+    display: grid;
+    grid-template-columns: 56px 1fr 110px 90px 70px;
+    padding: 11px 18px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .team-lb-row {
+    display: grid;
+    grid-template-columns: 56px 1fr 110px 90px 70px;
+    padding: 13px 18px;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+    transition: background 0.1s;
+  }
+
+  .team-lb-row:last-child { border-bottom: none; }
+  .team-lb-row:hover { background: var(--surface2); }
+  .team-lb-row.gold-row { background: rgba(251,191,36,0.05); }
+  .team-lb-row.silver-row { background: rgba(148,163,184,0.04); }
+  .team-lb-row.bronze-row { background: rgba(201,124,58,0.04); }
+
+  /* ── RANK BADGES ── */
+  .rank-badge {
+    width: 30px;
+    height: 30px;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-display);
+    font-size: 16px;
+    letter-spacing: 0;
+  }
+
+  .rank-1 { background: rgba(251,191,36,0.18); color: var(--gold); }
+  .rank-2 { background: rgba(148,163,184,0.15); color: var(--silver); }
+  .rank-3 { background: rgba(201,124,58,0.15); color: var(--bronze); }
+  .rank-n { background: var(--surface3); color: var(--muted); font-size: 13px; }
+
+  .player-name { font-weight: 500; font-size: 14px; }
+  .player-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  .pts-num {
+    font-family: var(--font-display);
+    font-size: 22px;
+    color: var(--accent);
+    text-align: right;
+  }
+
+  .pts-zero { color: var(--muted) !important; }
+  .col-r { text-align: right; }
+  .col-muted { color: var(--muted); font-size: 12px; text-align: right; }
+
+  /* ── EVENTS GRID ── */
+  .events-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+    gap: 16px;
+  }
+
+  .event-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.15s, transform 0.15s;
+  }
+
+  .event-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+
+  .event-card.upcoming {
+    opacity: 0.55;
+    cursor: default;
+  }
+
+  .event-card.upcoming:hover { transform: none; border-color: var(--border); }
+
+  .ecard-head {
+    padding: 14px 16px 11px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .ecard-name { font-weight: 600; font-size: 14px; line-height: 1.3; }
+  .ecard-course { font-size: 11px; color: var(--muted); margin-top: 3px; }
+  .ecard-body { padding: 12px 16px 14px; }
+
+  .type-badge {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 3px 9px;
+    border-radius: 5px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .tb-regular    { background: rgba(74,222,128,0.12); color: #4ade80; }
+  .tb-major      { background: rgba(251,191,36,0.14); color: var(--gold); }
+  .tb-scramble   { background: rgba(96,165,250,0.12); color: var(--blue); }
+  .tb-championship { background: rgba(248,113,113,0.12); color: var(--red); }
+  .tb-upcoming   { background: rgba(255,255,255,0.06); color: var(--muted); }
+
+  .podium-row {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    font-size: 12px;
+    padding: 3px 0;
+  }
+
+  .podium-pos { color: var(--muted); font-weight: 600; width: 22px; flex-shrink: 0; }
+  .podium-name { flex: 1; }
+  .podium-score { color: var(--muted); margin-right: 8px; font-size: 11px; }
+  .podium-pts { color: var(--accent); font-weight: 600; min-width: 32px; text-align: right; font-size: 12px; }
+
+  .upcoming-label { font-size: 12px; color: var(--muted); }
+  .upcoming-label strong { color: var(--text); font-weight: 500; }
+
+  /* ── EVENT DETAIL ── */
+  .back-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: var(--font-body);
+    font-size: 13px;
+    padding: 7px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-bottom: 24px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s;
+  }
+
+  .back-btn:hover { color: var(--text); border-color: var(--border2); }
+
+  .detail-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    gap: 16px;
+  }
+
+  .detail-title {
+    font-family: var(--font-display);
+    font-size: 36px;
+    letter-spacing: 3px;
+    line-height: 1;
+  }
+
+  .detail-sub { font-size: 13px; color: var(--muted); margin-top: 7px; }
+
+  .detail-table {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    width: 100%;
+    margin-bottom: 28px;
+  }
+
+  .dt-head {
+    display: grid;
+    padding: 11px 18px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .dt-row {
+    display: grid;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+    transition: background 0.1s;
+  }
+
+  .dt-row:last-child { border-bottom: none; }
+  .dt-row:hover { background: var(--surface2); }
+  .dt-row.dnp { opacity: 0.38; }
+
+  .indiv-grid { grid-template-columns: 56px 1fr 70px 90px 70px 70px; }
+  .team-grid  { grid-template-columns: 56px 1fr 130px 90px 80px; }
+
+  .score-num {
+    font-family: var(--font-display);
+    font-size: 22px;
+    text-align: right;
+  }
+
+  .sub-section-title {
+    font-family: var(--font-display);
+    font-size: 18px;
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+    margin-top: 4px;
+  }
+
+  /* ── STATES ── */
+  .loading-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 24px;
+    flex-direction: column;
+    gap: 18px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  .spinner {
+    width: 34px;
+    height: 34px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.75s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .error-box {
+    background: rgba(248,113,113,0.07);
+    border: 1px solid rgba(248,113,113,0.2);
+    border-radius: 12px;
+    padding: 22px 24px;
+    color: var(--red);
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .error-box small { opacity: 0.65; font-size: 11px; display: block; margin-top: 6px; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 700px) {
+    .header { padding: 0 16px; }
+    .logo { font-size: 22px; letter-spacing: 2px; }
+    .nav-btn { padding: 7px 10px; font-size: 12px; }
+    .page { padding: 16px; }
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .lb-head, .lb-row { grid-template-columns: 44px 1fr 80px; }
+    .lb-head > *:nth-child(4), .lb-row > *:nth-child(4),
+    .lb-head > *:nth-child(5), .lb-row > *:nth-child(5) { display: none; }
+    .team-lb-head, .team-lb-row { grid-template-columns: 44px 1fr 80px; }
+    .team-lb-head > *:nth-child(4), .team-lb-row > *:nth-child(4),
+    .team-lb-head > *:nth-child(5), .team-lb-row > *:nth-child(5) { display: none; }
+    .events-grid { grid-template-columns: 1fr; }
+    .indiv-grid { grid-template-columns: 44px 1fr 70px 70px; }
+    .indiv-grid > *:nth-child(3), .indiv-grid > *:nth-child(5) { display: none; }
+    .team-grid { grid-template-columns: 44px 1fr 80px 70px; }
+    .team-grid > *:nth-child(3) { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo">
+    THE AMATOUR
+    <span class="logo-sub">2026 SEASON</span>
+  </div>
+  <nav class="nav">
+    <button class="nav-btn active" onclick="showPage('leaderboard', this)">Leaderboard</button>
+    <button class="nav-btn" onclick="showPage('teams', this)">Teams</button>
+    <button class="nav-btn" onclick="showPage('events', this)">Events</button>
+  </nav>
+  <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+</header>
+
+<main>
+  <div id="page-leaderboard" class="page active">
+    <div id="lb-content"><div class="loading-state"><div class="spinner"></div><span>Loading leaderboard...</span></div></div>
+  </div>
+
+  <div id="page-teams" class="page">
+    <div id="teams-content"><div class="loading-state"><div class="spinner"></div><span>Loading teams...</span></div></div>
+  </div>
+
+  <div id="page-events" class="page">
+    <div id="events-content"><div class="loading-state"><div class="spinner"></div><span>Loading events...</span></div></div>
+  </div>
+</main>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────────────────────────
+const SHEET_ID = '1mQAlKOgb9Hv22_yE_G9NwtKXh9XLnIpdeiqanGSL4nw';
+
+const EVENTS = [
+  { name: 'April 1 – 15',     course: 'Stonebridge (Sunrise)',     type: 'regular',      indivSheet: 'April 1 - 15',      teamSheet: 'Team Event April 1-15' },
+  { name: 'April 16 – 30',    course: 'Glenmoor',                  type: 'regular',      indivSheet: 'April 16 - 30',     teamSheet: 'Team Event April 16-30' },
+  { name: 'May 9 – Scramble', course: 'Bountiful Ridge',           type: 'scramble',     indivSheet: null,                teamSheet: 'May 9 - Scramble' },
+  { name: 'May 16 – 31',      course: 'Bonneville',                type: 'regular',      indivSheet: 'May 16 - 31',       teamSheet: 'Team Event May 16-31' },
+  { name: 'June 6 – Major',   course: 'Mountain Dell Lake Course', type: 'major',        indivSheet: 'June 6 - Major',    teamSheet: 'Team Event June 6 Major' },
+  { name: 'June 16 – 30',     course: 'Riverbend',                 type: 'regular',      indivSheet: 'June 16 - 30',      teamSheet: 'Team Event June 16-30' },
+  { name: 'July 1 – 15',      course: 'The Ridge',                 type: 'regular',      indivSheet: 'July 1 - 15',       teamSheet: 'Team Event July 1-15' },
+  { name: 'July 25 – Major',  course: 'Thanksgiving Point',        type: 'major',        indivSheet: 'July 25 - Major',   teamSheet: 'Team Event July 25 Major' },
+  { name: 'August 1 – 15',    course: 'Valley View',               type: 'regular',      indivSheet: 'August 1 - 15',     teamSheet: 'Team Event August 1-15' },
+  { name: 'August 16 – 31',   course: 'River Oaks',                type: 'regular',      indivSheet: 'August 16 - 31',    teamSheet: 'Team Event August 16-31' },
+  { name: 'September 1 – 10', course: 'Eaglewood',                 type: 'regular',      indivSheet: 'September 1 - 10', teamSheet: 'Team Event September 1-10' },
+];
+
+// ── DATA LAYER ───────────────────────────────────────────────────────────────
+let _cache = {};
+
+async function fetchSheet(sheetName) {
+  if (_cache[sheetName]) return _cache[sheetName];
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`;
+  const res = await fetch(url);
+  const text = await res.text();
+  const match = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/);
+  if (!match) throw new Error('Could not parse sheet response. Make sure the sheet is set to "Anyone with the link can view".');
+  const json = JSON.parse(match[1]);
+  const rows = (json.table.rows || []).map(r =>
+    r.c ? r.c.map(c => (c && c.v !== null && c.v !== undefined) ? c.v : '') : []
+  );
+  _cache[sheetName] = rows;
+  return rows;
+}
+
+function clearCache() { _cache = {}; }
+
+async function loadSummary() {
+  const rows = await fetchSheet('Summary');
+  const players = [];
+  for (const row of rows) {
+    const name = row[3];
+    const pts  = row[4];
+    if (name && typeof name === 'string' && name.trim()) {
+      players.push({ name: name.trim(), points: Number(pts) || 0 });
+    }
+  }
+  return assignRanks(players.sort((a, b) => b.points - a.points), 'points');
+}
+
+async function loadTeams() {
+  const rows = await fetchSheet('2026 Teams');
+  const teams = {};
+  for (let i = 1; i < rows.length; i++) {
+    const r = rows[i];
+    if (!r[0] || !String(r[0]).trim()) continue;
+    teams[String(r[0]).trim()] = [r[1], r[2], r[3]].map(p => String(p || '').trim()).filter(Boolean);
+  }
+  return teams;
+}
+
+async function loadIndivEvent(sheetName) {
+  const rows = await fetchSheet(sheetName);
+  const players = [];
+  for (let i = 3; i < rows.length; i++) {
+    const r = rows[i];
+    const name = r[2];
+    if (!name || typeof name !== 'string' || !name.trim()) continue;
+    const gross = (r[5] === '' || r[5] === null || r[5] === undefined || r[5] === 'DNP') ? null : Number(r[5]);
+    players.push({
+      name:     name.trim(),
+      handicap: r[4] || '',
+      gross,
+      net:      r[6] !== '' ? r[6] : null,
+      rank:     r[7] || '',
+      points:   Number(r[9]) || 0,
+    });
+  }
+  return players.sort((a, b) => {
+    if (a.gross === null && b.gross === null) return 0;
+    if (a.gross === null) return 1;
+    if (b.gross === null) return -1;
+    return a.gross - b.gross;
+  });
+}
+
+async function loadTeamEvent(sheetName) {
+  try {
+    const rows = await fetchSheet(sheetName);
+    const teams = [];
+    for (let i = 3; i < rows.length; i++) {
+      const r = rows[i];
+      const team = r[2];
+      if (!team || typeof team !== 'string' || !team.trim()) continue;
+      const gross = (r[4] === '' || r[4] === null || r[4] === undefined) ? null : Number(r[4]);
+      teams.push({
+        team:    team.trim(),
+        players: r[3] || '',
+        gross,
+        rank:    r[5] || '',
+        points:  Number(r[7]) || 0,
+      });
+    }
+    return teams.sort((a, b) => {
+      if (a.gross === null && b.gross === null) return 0;
+      if (a.gross === null) return 1;
+      if (b.gross === null) return -1;
+      return a.gross - b.gross;
+    });
+  } catch(e) { return []; }
+}
+
+// ── HELPERS ──────────────────────────────────────────────────────────────────
+function assignRanks(arr, key) {
+  let rank = 1;
+  for (let i = 0; i < arr.length; i++) {
+    if (i > 0 && arr[i][key] === arr[i-1][key]) arr[i].rank = arr[i-1].rank;
+    else arr[i].rank = rank;
+    rank++;
+  }
+  return arr;
+}
+
+function rankBadge(r) {
+  const cls = r === 1 ? 'rank-1' : r === 2 ? 'rank-2' : r === 3 ? 'rank-3' : 'rank-n';
+  return `<div class="rank-badge ${cls}">${r}</div>`;
+}
+
+function rowClass(rank) {
+  return rank === 1 ? 'gold-row' : rank === 2 ? 'silver-row' : rank === 3 ? 'bronze-row' : '';
+}
+
+function typeBadge(type) {
+  const map = {
+    regular:      ['Regular',      'tb-regular'],
+    major:        ['Major',        'tb-major'],
+    scramble:     ['Scramble',     'tb-scramble'],
+    championship: ['Championship', 'tb-championship'],
+  };
+  const [label, cls] = map[type] || ['Event', 'tb-regular'];
+  return `<span class="type-badge ${cls}">${label}</span>`;
+}
+
+// ── LEADERBOARD ──────────────────────────────────────────────────────────────
+async function renderLeaderboard() {
+  const el = document.getElementById('lb-content');
+  el.innerHTML = loadingHtml();
+  try {
+    const players = await loadSummary();
+    const leader  = players[0];
+    const onBoard = players.filter(p => p.points > 0).length;
+
+    el.innerHTML = `
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-label">Players</div>
+          <div class="stat-value">${players.length}</div>
+          <div class="stat-sub">in the field</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Events Played</div>
+          <div class="stat-value">1</div>
+          <div class="stat-sub">of 11 scheduled</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Points Leader</div>
+          <div class="stat-value" style="font-size:20px;color:var(--gold);padding-top:6px;">${leader ? leader.name : '—'}</div>
+          <div class="stat-sub">${leader ? leader.points + ' pts' : ''}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">On the Board</div>
+          <div class="stat-value">${onBoard}</div>
+          <div class="stat-sub">of ${players.length} players</div>
+        </div>
+      </div>
+
+      <div class="section-header">
+        <div class="section-title">INDIVIDUAL STANDINGS</div>
+        <button class="refresh-btn" onclick="clearCache();renderLeaderboard()">↺ Refresh</button>
+      </div>
+
+      <div class="lb-table">
+        <div class="lb-head">
+          <div>Rank</div>
+          <div>Player</div>
+          <div class="col-r">Points</div>
+          <div class="col-r">Best Finish</div>
+          <div class="col-r">Events</div>
+        </div>
+        ${players.map(p => `
+          <div class="lb-row ${rowClass(p.rank)}">
+            <div>${rankBadge(p.rank)}</div>
+            <div><div class="player-name">${p.name}</div></div>
+            <div class="col-r"><span class="pts-num ${p.points === 0 ? 'pts-zero' : ''}">${p.points}</span></div>
+            <div class="col-muted">—</div>
+            <div class="col-muted">1</div>
+          </div>`).join('')}
+      </div>`;
+  } catch(e) {
+    el.innerHTML = errorHtml(e);
+  }
+}
+
+// ── TEAMS ────────────────────────────────────────────────────────────────────
+async function renderTeams() {
+  const el = document.getElementById('teams-content');
+  el.innerHTML = loadingHtml();
+  try {
+    const [teamsData, teamEvent] = await Promise.all([
+      loadTeams(),
+      loadTeamEvent('Team Event April 1-15'),
+    ]);
+
+    // Accumulate points from all team event tabs
+    const teamSheets = EVENTS.filter(e => e.teamSheet && e.type !== 'scramble').map(e => e.teamSheet);
+    const allTeamEvents = await Promise.all(teamSheets.map(s => loadTeamEvent(s).catch(() => [])));
+
+    const totals = {};
+    for (const [name, members] of Object.entries(teamsData)) {
+      totals[name] = { name, members, points: 0, wins: 0, bestFinish: null };
+    }
+
+    for (const eventRows of allTeamEvents) {
+      for (const row of eventRows) {
+        if (!totals[row.team]) continue;
+        totals[row.team].points += row.points || 0;
+        const r = parseInt(String(row.rank).replace(/\D/g, ''));
+        if (!isNaN(r)) {
+          if (r === 1) totals[row.team].wins++;
+          if (totals[row.team].bestFinish === null || r < totals[row.team].bestFinish) {
+            totals[row.team].bestFinish = r;
+          }
+        }
+      }
+    }
+
+    const sorted = assignRanks(
+      Object.values(totals).sort((a, b) => b.points - a.points),
+      'points'
+    );
+
+    el.innerHTML = `
+      <div class="section-header">
+        <div class="section-title">TEAM STANDINGS</div>
+        <button class="refresh-btn" onclick="clearCache();renderTeams()">↺ Refresh</button>
+      </div>
+      <div class="lb-table">
+        <div class="team-lb-head">
+          <div>Rank</div>
+          <div>Team</div>
+          <div class="col-r">Points</div>
+          <div class="col-r">Wins</div>
+          <div class="col-r">Best</div>
+        </div>
+        ${sorted.map(t => `
+          <div class="team-lb-row ${rowClass(t.rank)}">
+            <div>${rankBadge(t.rank)}</div>
+            <div>
+              <div class="player-name">${t.name}</div>
+              <div class="player-sub">${t.members.join(' · ')}</div>
+            </div>
+            <div class="col-r"><span class="pts-num ${t.points === 0 ? 'pts-zero' : ''}">${t.points}</span></div>
+            <div class="col-muted">${t.wins}</div>
+            <div class="col-muted">${t.bestFinish ? '#' + t.bestFinish : '—'}</div>
+          </div>`).join('')}
+      </div>`;
+  } catch(e) {
+    el.innerHTML = errorHtml(e);
+  }
+}
+
+// ── EVENTS GRID ───────────────────────────────────────────────────────────────
+async function renderEvents() {
+  const el = document.getElementById('events-content');
+  el.innerHTML = `
+    <div class="section-header" style="margin-bottom:18px;">
+      <div class="section-title">2026 SCHEDULE</div>
+      <button class="refresh-btn" onclick="clearCache();renderEvents()">↺ Refresh</button>
+    </div>
+    <div class="events-grid">
+      ${EVENTS.map((_, i) => `
+        <div id="ecard-${i}" class="event-card upcoming">
+          <div class="ecard-head">
+            <div><div class="ecard-name">Loading...</div></div>
+            <span class="type-badge tb-upcoming">...</span>
+          </div>
+          <div class="ecard-body">
+            <div class="loading-state" style="padding:16px;">
+              <div class="spinner" style="width:18px;height:18px;border-width:2px;"></div>
+            </div>
+          </div>
+        </div>`).join('')}
+    </div>`;
+
+  EVENTS.forEach((ev, i) => renderEventCard(i, ev));
+}
+
+async function renderEventCard(i, ev) {
+  const card = document.getElementById(`ecard-${i}`);
+  if (!card) return;
+
+  try {
+    let hasData = false;
+    let podiumRows = '';
+
+    if (ev.type === 'scramble') {
+      const teams = await loadTeamEvent(ev.teamSheet);
+      hasData = teams.some(t => t.gross !== null);
+      if (hasData) {
+        podiumRows = teams.filter(t => t.gross !== null).slice(0, 3).map((t, idx) =>
+          `<div class="podium-row">
+            <span class="podium-pos">${idx + 1}</span>
+            <span class="podium-name">${t.team}</span>
+            <span class="podium-score">${t.gross}</span>
+            <span class="podium-pts">+${t.points}</span>
+          </div>`
+        ).join('');
+      }
+    } else if (ev.indivSheet) {
+      const players = await loadIndivEvent(ev.indivSheet);
+      hasData = players.some(p => p.gross !== null);
+      if (hasData) {
+        podiumRows = players.filter(p => p.gross !== null).slice(0, 3).map((p, idx) =>
+          `<div class="podium-row">
+            <span class="podium-pos">${idx + 1}</span>
+            <span class="podium-name">${p.name}</span>
+            <span class="podium-score">${p.gross}</span>
+            <span class="podium-pts">+${p.points}</span>
+          </div>`
+        ).join('');
+      }
+    }
+
+    if (hasData) {
+      card.className = 'event-card';
+      card.onclick = () => showEventDetail(i);
+      card.innerHTML = `
+        <div class="ecard-head">
+          <div>
+            <div class="ecard-name">${ev.name}</div>
+            <div class="ecard-course">${ev.course}</div>
+          </div>
+          ${typeBadge(ev.type)}
+        </div>
+        <div class="ecard-body">${podiumRows}</div>`;
+    } else {
+      card.className = 'event-card upcoming';
+      card.onclick = null;
+      card.innerHTML = `
+        <div class="ecard-head">
+          <div>
+            <div class="ecard-name">${ev.name}</div>
+            <div class="ecard-course">${ev.course}</div>
+          </div>
+          <span class="type-badge tb-upcoming">Upcoming</span>
+        </div>
+        <div class="ecard-body">
+          <div class="upcoming-label">Type: <strong>${ev.type.charAt(0).toUpperCase() + ev.type.slice(1)}</strong></div>
+          <div class="upcoming-label" style="margin-top:5px;font-size:11px;opacity:0.7;">No scores recorded yet</div>
+        </div>`;
+    }
+  } catch(e) {
+    card.className = 'event-card upcoming';
+    card.innerHTML = `
+      <div class="ecard-head">
+        <div>
+          <div class="ecard-name">${ev.name}</div>
+          <div class="ecard-course">${ev.course}</div>
+        </div>
+        <span class="type-badge tb-upcoming">Upcoming</span>
+      </div>
+      <div class="ecard-body"><div class="upcoming-label" style="font-size:11px;">No scores yet</div></div>`;
+  }
+}
+
+// ── EVENT DETAIL ──────────────────────────────────────────────────────────────
+async function showEventDetail(i) {
+  const ev = EVENTS[i];
+  const el = document.getElementById('events-content');
+  el.innerHTML = loadingHtml();
+
+  try {
+    let html = `
+      <button class="back-btn" onclick="clearCache();renderEvents()">← Back to Events</button>
+      <div class="detail-header">
+        <div>
+          <div class="detail-title">${ev.name.toUpperCase()}</div>
+          <div class="detail-sub">${ev.course}</div>
+        </div>
+        ${typeBadge(ev.type)}
+      </div>`;
+
+    if (ev.type === 'scramble') {
+      const teams = await loadTeamEvent(ev.teamSheet);
+      html += `
+        <div class="sub-section-title">TEAM RESULTS</div>
+        <div class="detail-table">
+          <div class="dt-head team-grid">
+            <div>Pos</div><div>Team / Players</div>
+            <div class="col-r">Score</div><div class="col-r">Points</div><div></div>
+          </div>
+          ${teams.map((t, idx) => {
+            const pos = t.gross !== null ? idx + 1 : null;
+            return `<div class="dt-row team-grid">
+              <div>${pos ? rankBadge(pos) : '<span style="color:var(--muted);font-size:11px;">—</span>'}</div>
+              <div>
+                <div class="player-name">${t.team}</div>
+                <div class="player-sub">${t.players}</div>
+              </div>
+              <div class="col-r"><span class="score-num">${t.gross !== null ? t.gross : '—'}</span></div>
+              <div class="col-r"><span class="pts-num ${t.points === 0 ? 'pts-zero' : ''}">${t.points}</span></div>
+              <div></div>
+            </div>`;
+          }).join('')}
+        </div>`;
+    } else {
+      // Individual results
+      const players = await loadIndivEvent(ev.indivSheet);
+      html += `
+        <div class="detail-table">
+          <div class="dt-head indiv-grid">
+            <div>Pos</div><div>Player</div>
+            <div class="col-r">HCP</div>
+            <div class="col-r">Gross</div>
+            <div class="col-r">Net</div>
+            <div class="col-r">Pts</div>
+          </div>
+          ${players.map((p, idx) => {
+            const dnp = p.gross === null;
+            const pos = dnp ? null : idx + 1;
+            return `<div class="dt-row indiv-grid ${dnp ? 'dnp' : ''}">
+              <div>${pos ? rankBadge(pos) : '<span style="color:var(--muted);font-size:11px;">DNP</span>'}</div>
+              <div class="player-name">${p.name}</div>
+              <div class="col-r" style="color:var(--muted);font-size:12px;">${p.handicap}</div>
+              <div class="col-r"><span class="score-num">${p.gross !== null ? p.gross : '—'}</span></div>
+              <div class="col-muted">${p.net !== null ? p.net : '—'}</div>
+              <div class="col-r"><span class="pts-num ${p.points === 0 ? 'pts-zero' : ''}">${p.points}</span></div>
+            </div>`;
+          }).join('')}
+        </div>`;
+
+      // Team results for this event
+      const teamRows = await loadTeamEvent(ev.teamSheet).catch(() => []);
+      if (teamRows.length > 0 && teamRows.some(t => t.gross !== null)) {
+        html += `
+          <div class="sub-section-title">TEAM RESULTS</div>
+          <div class="detail-table">
+            <div class="dt-head team-grid">
+              <div>Pos</div><div>Team / Players</div>
+              <div class="col-r">Score</div><div class="col-r">Points</div><div></div>
+            </div>
+            ${teamRows.map((t, idx) => {
+              const pos = t.gross !== null ? idx + 1 : null;
+              return `<div class="dt-row team-grid">
+                <div>${pos ? rankBadge(pos) : '<span style="color:var(--muted);font-size:11px;">—</span>'}</div>
+                <div>
+                  <div class="player-name">${t.team}</div>
+                  <div class="player-sub">${t.players}</div>
+                </div>
+                <div class="col-r"><span class="score-num">${t.gross !== null ? t.gross : '—'}</span></div>
+                <div class="col-r"><span class="pts-num ${t.points === 0 ? 'pts-zero' : ''}">${t.points}</span></div>
+                <div></div>
+              </div>`;
+            }).join('')}
+          </div>`;
+      }
+    }
+
+    el.innerHTML = html;
+  } catch(e) {
+    el.innerHTML = `
+      <button class="back-btn" onclick="renderEvents()">← Back to Events</button>
+      ${errorHtml(e)}`;
+  }
+}
+
+// ── NAV ───────────────────────────────────────────────────────────────────────
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── UTILITY HTML ─────────────────────────────────────────────────────────────
+function loadingHtml() {
+  return `<div class="loading-state"><div class="spinner"></div><span>Loading...</span></div>`;
+}
+
+function errorHtml(e) {
+  return `<div class="error-box">
+    Could not load data from Google Sheets. Make sure the sheet is set to <strong>"Anyone with the link can view"</strong>.
+    <small>${e.message}</small>
+  </div>`;
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+renderLeaderboard();
+renderTeams();
+renderEvents();
+</script>
+</body>
+</html>
