@@ -738,28 +738,41 @@ async function loadTeamEvent(sheetName) {
 
 // ── HELPERS ──────────────────────────────────────────────────────────────────
 
-// Assigns rank with tie support. Sequential positions always increment.
-// tied=true just adds the "T-" prefix label, doesn't affect next position number.
+// Assigns group-based rank numbers. Each new group of equal values gets the next
+// sequential group number. e.g. 1, T-2, T-2, T-2, T-3, T-3, T-4 ...
 function assignRanks(arr, key) {
-  for (let i = 0; i < arr.length; i++) {
-    arr[i].rank = i + 1;
-    arr[i].tied = i > 0 && arr[i][key] === arr[i-1][key];
-    // Also mark previous as tied if this one matches it
-    if (arr[i].tied) arr[i-1].tied = true;
+  let groupNum = 0;
+  let i = 0;
+  while (i < arr.length) {
+    groupNum++;
+    let j = i + 1;
+    while (j < arr.length && arr[j][key] === arr[i][key]) j++;
+    const isTied = j - i > 1;
+    for (let k = i; k < j; k++) {
+      arr[k].rank = groupNum;
+      arr[k].tied = isTied;
+    }
+    i = j;
   }
   return arr;
 }
 
-// Assigns positions for event results sorted ascending by score (lower = better).
-// Sequential positions always increment — ties just get a "T-" label.
+// Same group-based logic for event results sorted ascending by gross.
+// e.g. 1, T-2, T-2, T-3, T-3, T-3, T-4 ...
 function assignPositions(arr) {
-  let pos = 1;
-  for (let i = 0; i < arr.length; i++) {
-    if (arr[i].gross === null) { arr[i].pos = null; arr[i].tied = false; continue; }
-    arr[i].pos = pos;
-    arr[i].tied = i > 0 && arr[i].gross === arr[i-1].gross && arr[i-1].gross !== null;
-    if (arr[i].tied) arr[i-1].tied = true;
-    pos++;
+  let groupNum = 0;
+  let i = 0;
+  while (i < arr.length) {
+    if (arr[i].gross === null) { arr[i].pos = null; arr[i].tied = false; i++; continue; }
+    groupNum++;
+    let j = i + 1;
+    while (j < arr.length && arr[j].gross !== null && arr[j].gross === arr[i].gross) j++;
+    const isTied = j - i > 1;
+    for (let k = i; k < j; k++) {
+      arr[k].pos = groupNum;
+      arr[k].tied = isTied;
+    }
+    i = j;
   }
   return arr;
 }
