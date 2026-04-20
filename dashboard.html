@@ -501,6 +501,7 @@
     <button class="nav-btn active" onclick="showPage('leaderboard', this)">Leaderboard</button>
     <button class="nav-btn" onclick="showPage('teams', this)">Teams</button>
     <button class="nav-btn" onclick="showPage('events', this)">Events</button>
+    <button class="nav-btn" onclick="showPage('debug', this)">Debug</button>
   </nav>
   <div class="live-badge"><div class="live-dot"></div>LIVE</div>
 </header>
@@ -516,6 +517,9 @@
 
   <div id="page-events" class="page">
     <div id="events-content"><div class="loading-state"><div class="spinner"></div><span>Loading events...</span></div></div>
+  </div>
+  <div id="page-debug" class="page">
+    <div id="debug-content"><div class="loading-state"><div class="spinner"></div><span>Loading debug info...</span></div></div>
   </div>
 </main>
 
@@ -1052,10 +1056,55 @@ function errorHtml(e) {
   </div>`;
 }
 
+// ── DEBUG ────────────────────────────────────────────────────────────────────
+async function renderDebug() {
+  const el = document.getElementById('debug-content');
+  el.innerHTML = '<div class="loading-state"><div class="spinner"></div><span>Fetching raw sheet data...</span></div>';
+  
+  const sheetsToTest = [
+    'Summary',
+    'April 1 - 15',
+    'Team Event April 1-15',
+    '2026 Teams',
+  ];
+  
+  let html = '<div style="font-family:monospace;font-size:12px;">';
+  html += '<div style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;"><div class="section-title">RAW DATA DEBUG</div><button class="refresh-btn" onclick="clearCache();renderDebug()">↺ Refresh</button></div>';
+  
+  for (const sheet of sheetsToTest) {
+    html += `<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px;">`;
+    html += `<div style="color:var(--accent);font-weight:600;margin-bottom:10px;font-size:13px;">Sheet: "${sheet}"</div>`;
+    try {
+      const rows = await fetchSheet(sheet);
+      html += `<div style="color:var(--muted);margin-bottom:8px;">Total rows returned: ${rows.length}</div>`;
+      html += `<div style="overflow-x:auto;"><table style="border-collapse:collapse;width:100%;">`;
+      // Show first 8 rows
+      const preview = rows.slice(0, 8);
+      preview.forEach((row, i) => {
+        html += `<tr style="border-bottom:1px solid var(--border);">`;
+        html += `<td style="padding:4px 8px;color:var(--muted);min-width:24px;">${i}</td>`;
+        row.forEach((cell, j) => {
+          const val = cell === '' || cell === null ? '<span style="opacity:0.3">—</span>' : String(cell);
+          html += `<td style="padding:4px 8px;border-left:1px solid var(--border);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${String(cell)}">[${j}] ${val}</td>`;
+        });
+        html += `</tr>`;
+      });
+      html += `</table></div>`;
+      if (rows.length > 8) html += `<div style="color:var(--muted);margin-top:6px;font-size:11px;">...and ${rows.length - 8} more rows</div>`;
+    } catch(e) {
+      html += `<div style="color:var(--red);">ERROR: ${e.message}</div>`;
+    }
+    html += `</div>`;
+  }
+  html += '</div>';
+  el.innerHTML = html;
+}
+
 // ── INIT ──────────────────────────────────────────────────────────────────────
 renderLeaderboard();
 renderTeams();
 renderEvents();
+renderDebug();
 </script>
 </body>
 </html>
