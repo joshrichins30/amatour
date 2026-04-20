@@ -584,24 +584,37 @@ async function loadTeams() {
 async function loadIndivEvent(sheetName) {
   const rows = await fetchSheet(sheetName);
   const players = [];
-  // Dynamically find header row by looking for "Player Name" in col C
-  let dataStart = 4;
+  // Find header row and column positions dynamically
+  let headerRowIdx = -1;
+  let colName = -1, colHcp = -1, colGross = -1, colNet = -1, colRank = -1, colPoints = -1;
   for (let i = 0; i < rows.length; i++) {
-    const cell = String(rows[i][2] || '').trim().toLowerCase();
-    if (cell === 'player name') { dataStart = i + 1; break; }
-  }
-  for (let i = dataStart; i < rows.length; i++) {
     const r = rows[i];
-    const name = r[2];
+    for (let j = 0; j < r.length; j++) {
+      const v = String(r[j] || '').trim().toLowerCase();
+      if (v === 'player name') { headerRowIdx = i; colName = j; }
+      if (v === 'handicap') colHcp = j;
+      if (v === 'gross score') colGross = j;
+      if (v === 'net score') colNet = j;
+      if (v === 'rank') colRank = j;
+      if (v === 'point allocation') colPoints = j;
+    }
+    if (headerRowIdx === i && colName >= 0) break;
+  }
+  if (headerRowIdx === -1 || colName === -1) return [];
+  for (let i = headerRowIdx + 1; i < rows.length; i++) {
+    const r = rows[i];
+    const name = colName >= 0 ? r[colName] : null;
     if (!name || typeof name !== 'string' || !name.trim()) continue;
-    const gross = (r[5] === '' || r[5] === null || r[5] === undefined || r[5] === 'DNP') ? null : Number(r[5]);
+    const grossVal = colGross >= 0 ? r[colGross] : null;
+    const gross = (grossVal === '' || grossVal === null || grossVal === undefined || grossVal === 'DNP') ? null : Number(grossVal);
+    const netVal = colNet >= 0 ? r[colNet] : null;
     players.push({
       name:     name.trim(),
-      handicap: r[4] || '',
+      handicap: colHcp >= 0 ? (r[colHcp] || '') : '',
       gross,
-      net:      r[6] !== '' ? r[6] : null,
-      rank:     r[7] || '',
-      points:   Number(r[9]) || 0,
+      net:      (netVal !== '' && netVal !== null && netVal !== undefined) ? netVal : null,
+      rank:     colRank >= 0 ? (r[colRank] || '') : '',
+      points:   colPoints >= 0 ? (Number(r[colPoints]) || 0) : 0,
     });
   }
   return players.sort((a, b) => {
@@ -616,23 +629,34 @@ async function loadTeamEvent(sheetName) {
   try {
     const rows = await fetchSheet(sheetName);
     const teams = [];
-    // Dynamically find header row by looking for "Team" label in col C
-    let dataStart = 4;
+    // Find header row and all column positions dynamically
+    let headerRowIdx = -1;
+    let colTeam = -1, colPlayers = -1, colGross = -1, colRank = -1, colPoints = -1;
     for (let i = 0; i < rows.length; i++) {
-      const cell = String(rows[i][2] || '').trim().toLowerCase();
-      if (cell === 'team') { dataStart = i + 1; break; }
-    }
-    for (let i = dataStart; i < rows.length; i++) {
       const r = rows[i];
-      const team = r[2];
-      if (!team || typeof team !== 'string' || !String(team).trim()) continue;
-      const gross = (r[4] === '' || r[4] === null || r[4] === undefined) ? null : Number(r[4]);
+      for (let j = 0; j < r.length; j++) {
+        const v = String(r[j] || '').trim().toLowerCase();
+        if (v === 'team') { headerRowIdx = i; colTeam = j; }
+        if (v === 'players') colPlayers = j;
+        if (v === 'gross score') colGross = j;
+        if (v === 'rank') colRank = j;
+        if (v === 'point allocation') colPoints = j;
+      }
+      if (headerRowIdx === i && colTeam >= 0) break;
+    }
+    if (headerRowIdx === -1 || colTeam === -1) return [];
+    for (let i = headerRowIdx + 1; i < rows.length; i++) {
+      const r = rows[i];
+      const team = colTeam >= 0 ? r[colTeam] : null;
+      if (!team || !String(team).trim().match(/team/i)) continue;
+      const grossVal = colGross >= 0 ? r[colGross] : null;
+      const gross = (grossVal === '' || grossVal === null || grossVal === undefined) ? null : Number(grossVal);
       teams.push({
         team:    String(team).trim(),
-        players: r[3] || '',
+        players: colPlayers >= 0 ? (r[colPlayers] || '') : '',
         gross,
-        rank:    r[5] || '',
-        points:  Number(r[7]) || 0,
+        rank:    colRank >= 0 ? (r[colRank] || '') : '',
+        points:  colPoints >= 0 ? (Number(r[colPoints]) || 0) : 0,
       });
     }
     return teams.sort((a, b) => {
