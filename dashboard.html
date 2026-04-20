@@ -472,21 +472,101 @@
   .error-box small { opacity: 0.65; font-size: 11px; display: block; margin-top: 6px; }
 
   /* ── RESPONSIVE ── */
+
+  /* Tablet: 700px and below */
   @media (max-width: 700px) {
-    .header { padding: 0 16px; }
-    .logo { font-size: 22px; letter-spacing: 2px; }
-    .nav-btn { padding: 7px 10px; font-size: 12px; }
+    /* Header: stack logo and hide live badge, nav scrolls */
+    .header {
+      padding: 0 16px;
+      height: auto;
+      flex-wrap: wrap;
+      gap: 0;
+      padding-top: 10px;
+      padding-bottom: 10px;
+    }
+    .logo { font-size: 20px; letter-spacing: 2px; }
+    .live-badge { display: none; }
+    .nav {
+      width: 100%;
+      order: 3;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 6px;
+      gap: 2px;
+      scrollbar-width: none;
+    }
+    .nav::-webkit-scrollbar { display: none; }
+    .nav-btn {
+      padding: 7px 12px;
+      font-size: 12px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    /* Pages */
     .page { padding: 16px; }
-    .stats-row { grid-template-columns: repeat(2, 1fr); }
+
+    /* Stats: 2 col on tablet */
+    .stats-row { grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
+    .stat-value { font-size: 28px; }
+
+    /* Individual leaderboard: hide Events col */
     .lb-head, .lb-row { grid-template-columns: 44px 1fr 80px; }
     .lb-head > *:nth-child(4), .lb-row > *:nth-child(4) { display: none; }
+
+    /* Team leaderboard: hide Wins col */
     .team-lb-head, .team-lb-row { grid-template-columns: 44px 1fr 80px; }
     .team-lb-head > *:nth-child(4), .team-lb-row > *:nth-child(4) { display: none; }
+
+    /* Events grid: single col */
     .events-grid { grid-template-columns: 1fr; }
-    .indiv-grid { grid-template-columns: 44px 1fr 70px 70px; }
-    .indiv-grid > *:nth-child(3), .indiv-grid > *:nth-child(5) { display: none; }
-    .team-grid { grid-template-columns: 44px 1fr 80px 70px; }
-    .team-grid > *:nth-child(3) { display: none; }
+
+    /* Event detail: indiv table - hide HCP col */
+    .indiv-grid { grid-template-columns: 44px 1fr 80px 60px; }
+    .indiv-grid > *:nth-child(3) { display: none; }
+
+    /* Event detail: team table */
+    .team-grid { grid-template-columns: 44px 1fr 80px 60px; }
+  }
+
+  /* Mobile: 480px and below */
+  @media (max-width: 480px) {
+    /* Header tighter */
+    .logo { font-size: 18px; letter-spacing: 1px; }
+    .logo-sub { font-size: 10px; }
+    .nav-btn { padding: 6px 10px; font-size: 11px; }
+
+    /* Stats: single col on small phones */
+    .stats-row { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .stat-card { padding: 12px 14px; }
+    .stat-value { font-size: 26px; }
+    .stat-label { font-size: 9px; }
+
+    /* Leaderboard rows tighter */
+    .lb-head, .lb-row { grid-template-columns: 38px 1fr 70px; padding: 10px 12px; }
+    .team-lb-head, .team-lb-row { grid-template-columns: 38px 1fr 70px; padding: 10px 12px; }
+    .rank-badge { width: 26px; height: 26px; font-size: 13px; }
+    .player-name { font-size: 13px; }
+    .player-sub { font-size: 10px; }
+    .pts-num { font-size: 18px; }
+
+    /* Section titles smaller */
+    .section-title { font-size: 18px; letter-spacing: 2px; }
+
+    /* Event cards */
+    .ecard-head { padding: 12px 14px 10px; }
+    .ecard-body { padding: 10px 14px 12px; }
+    .ecard-name { font-size: 13px; }
+
+    /* Event detail */
+    .detail-title { font-size: 26px; letter-spacing: 2px; }
+    .detail-header { flex-direction: column; gap: 10px; margin-bottom: 16px; }
+    .indiv-grid { grid-template-columns: 38px 1fr 70px 55px; padding: 10px 12px; }
+    .team-grid { grid-template-columns: 38px 1fr 70px 55px; padding: 10px 12px; }
+    .score-num { font-size: 18px; }
+
+    /* Back button */
+    .back-btn { margin-bottom: 16px; font-size: 12px; padding: 6px 12px; }
   }
 </style>
 </head>
@@ -501,7 +581,6 @@
     <button class="nav-btn active" onclick="showPage('leaderboard', this)">Individual Standings</button>
     <button class="nav-btn" onclick="showPage('teams', this)">Team Standings</button>
     <button class="nav-btn" onclick="showPage('events', this)">Events</button>
-    <button class="nav-btn" onclick="showPage('debug', this)">Debug</button>
   </nav>
   <div class="live-badge"><div class="live-dot"></div>LIVE</div>
 </header>
@@ -658,19 +737,50 @@ async function loadTeamEvent(sheetName) {
 }
 
 // ── HELPERS ──────────────────────────────────────────────────────────────────
+
+// Assigns rank with tie support. arr must already be sorted descending by key.
 function assignRanks(arr, key) {
   let rank = 1;
   for (let i = 0; i < arr.length; i++) {
-    if (i > 0 && arr[i][key] === arr[i-1][key]) arr[i].rank = arr[i-1].rank;
-    else arr[i].rank = rank;
+    if (i > 0 && arr[i][key] === arr[i-1][key]) {
+      arr[i].rank = arr[i-1].rank;
+      arr[i].tied = true;
+      arr[i-1].tied = true;
+    } else {
+      arr[i].rank = rank;
+      arr[i].tied = false;
+    }
     rank++;
   }
   return arr;
 }
 
-function rankBadge(r) {
+// Assigns positions for event results sorted ascending by score (lower = better)
+// Returns array with .pos and .tied added
+function assignPositions(arr) {
+  // arr is sorted ascending by gross already
+  let pos = 1;
+  for (let i = 0; i < arr.length; i++) {
+    if (arr[i].gross === null) { arr[i].pos = null; arr[i].tied = false; continue; }
+    if (i > 0 && arr[i].gross === arr[i-1].gross && arr[i-1].gross !== null) {
+      arr[i].pos = arr[i-1].pos;
+      arr[i].tied = true;
+      arr[i-1].tied = true;
+    } else {
+      arr[i].pos = pos;
+      arr[i].tied = false;
+    }
+    pos++;
+  }
+  return arr;
+}
+
+function rankBadge(r, tied) {
+  const label = tied ? 'T-' + r : String(r);
   const cls = r === 1 ? 'rank-1' : r === 2 ? 'rank-2' : r === 3 ? 'rank-3' : 'rank-n';
-  return `<div class="rank-badge ${cls}">${r}</div>`;
+  // Shrink font a bit for T-labels so they fit
+  const style = tied ? ' style="font-size:11px;"' : '';
+  return `<div class="rank-badge ${cls}"${style}>${label}</div>`;
 }
 
 function rowClass(rank) {
@@ -735,7 +845,7 @@ async function renderLeaderboard() {
         </div>
         ${players.map(p => `
           <div class="lb-row ${rowClass(p.rank)}">
-            <div>${rankBadge(p.rank)}</div>
+            <div>${rankBadge(p.rank, p.tied)}</div>
             <div><div class="player-name">${p.name}</div></div>
             <div class="col-r"><span class="pts-num ${p.points === 0 ? 'pts-zero' : ''}">${p.points}</span></div>
             <div class="col-muted">1</div>
@@ -799,7 +909,7 @@ async function renderTeams() {
         </div>
         ${sorted.map(t => `
           <div class="team-lb-row ${rowClass(t.rank)}">
-            <div>${rankBadge(t.rank)}</div>
+            <div>${rankBadge(t.rank, t.tied)}</div>
             <div>
               <div class="player-name">${t.name}</div>
               <div class="player-sub">${t.members.join(' · ')}</div>
@@ -864,9 +974,10 @@ async function renderEventCard(i, ev) {
       const players = await loadIndivEvent(ev.indivSheet);
       hasData = players.some(p => p.gross !== null);
       if (hasData) {
-        podiumRows = players.filter(p => p.gross !== null).slice(0, 3).map((p, idx) =>
+        const ranked = assignPositions(players.filter(p => p.gross !== null));
+        podiumRows = ranked.slice(0, 3).map((p) =>
           `<div class="podium-row">
-            <span class="podium-pos">${idx + 1}</span>
+            <span class="podium-pos">${p.tied ? 'T-'+p.pos : p.pos}</span>
             <span class="podium-name">${p.name}</span>
             <span class="podium-score">${p.gross}</span>
             <span class="podium-pts">+${p.points}</span>
@@ -946,10 +1057,10 @@ async function showEventDetail(i) {
             <div>Pos</div><div>Team / Players</div>
             <div class="col-r">Score</div><div class="col-r">Points</div><div></div>
           </div>
-          ${teams.map((t, idx) => {
-            const pos = t.gross !== null ? idx + 1 : null;
+          ${assignPositions(teams).map((t) => {
+            const noScore = t.gross === null;
             return `<div class="dt-row team-grid">
-              <div>${pos ? rankBadge(pos) : '<span style="color:var(--muted);font-size:11px;">—</span>'}</div>
+              <div>${noScore ? '<span style="color:var(--muted);font-size:11px;">—</span>' : rankBadge(t.pos, t.tied)}</div>
               <div>
                 <div class="player-name">${t.team}</div>
                 <div class="player-sub">${t.players}</div>
@@ -971,11 +1082,10 @@ async function showEventDetail(i) {
             <div class="col-r">Gross</div>
             <div class="col-r">Pts</div>
           </div>
-          ${players.map((p, idx) => {
+          ${assignPositions(players).map((p) => {
             const dnp = p.gross === null;
-            const pos = dnp ? null : idx + 1;
             return `<div class="dt-row indiv-grid ${dnp ? 'dnp' : ''}">
-              <div>${pos ? rankBadge(pos) : '<span style="color:var(--muted);font-size:11px;">DNP</span>'}</div>
+              <div>${dnp ? '<span style="color:var(--muted);font-size:11px;">DNP</span>' : rankBadge(p.pos, p.tied)}</div>
               <div class="player-name">${p.name}</div>
               <div class="col-r" style="color:var(--muted);font-size:12px;">${p.handicap}</div>
               <div class="col-r"><span class="score-num">${p.gross !== null ? p.gross : '—'}</span></div>
@@ -994,10 +1104,10 @@ async function showEventDetail(i) {
               <div>Pos</div><div>Team / Players</div>
               <div class="col-r">Score</div><div class="col-r">Points</div><div></div>
             </div>
-            ${teamRows.map((t, idx) => {
-              const pos = t.gross !== null ? idx + 1 : null;
+            ${assignPositions(teamRows).map((t) => {
+              const noScore = t.gross === null;
               return `<div class="dt-row team-grid">
-                <div>${pos ? rankBadge(pos) : '<span style="color:var(--muted);font-size:11px;">—</span>'}</div>
+                <div>${noScore ? '<span style="color:var(--muted);font-size:11px;">—</span>' : rankBadge(t.pos, t.tied)}</div>
                 <div>
                   <div class="player-name">${t.team}</div>
                   <div class="player-sub">${t.players}</div>
