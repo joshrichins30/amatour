@@ -738,38 +738,27 @@ async function loadTeamEvent(sheetName) {
 
 // ── HELPERS ──────────────────────────────────────────────────────────────────
 
-// Assigns rank with tie support. arr must already be sorted descending by key.
+// Assigns rank with tie support. Sequential positions always increment.
+// tied=true just adds the "T-" prefix label, doesn't affect next position number.
 function assignRanks(arr, key) {
-  let rank = 1;
   for (let i = 0; i < arr.length; i++) {
-    if (i > 0 && arr[i][key] === arr[i-1][key]) {
-      arr[i].rank = arr[i-1].rank;
-      arr[i].tied = true;
-      arr[i-1].tied = true;
-    } else {
-      arr[i].rank = rank;
-      arr[i].tied = false;
-    }
-    rank++;
+    arr[i].rank = i + 1;
+    arr[i].tied = i > 0 && arr[i][key] === arr[i-1][key];
+    // Also mark previous as tied if this one matches it
+    if (arr[i].tied) arr[i-1].tied = true;
   }
   return arr;
 }
 
-// Assigns positions for event results sorted ascending by score (lower = better)
-// Returns array with .pos and .tied added
+// Assigns positions for event results sorted ascending by score (lower = better).
+// Sequential positions always increment — ties just get a "T-" label.
 function assignPositions(arr) {
-  // arr is sorted ascending by gross already
   let pos = 1;
   for (let i = 0; i < arr.length; i++) {
     if (arr[i].gross === null) { arr[i].pos = null; arr[i].tied = false; continue; }
-    if (i > 0 && arr[i].gross === arr[i-1].gross && arr[i-1].gross !== null) {
-      arr[i].pos = arr[i-1].pos;
-      arr[i].tied = true;
-      arr[i-1].tied = true;
-    } else {
-      arr[i].pos = pos;
-      arr[i].tied = false;
-    }
+    arr[i].pos = pos;
+    arr[i].tied = i > 0 && arr[i].gross === arr[i-1].gross && arr[i-1].gross !== null;
+    if (arr[i].tied) arr[i-1].tied = true;
     pos++;
   }
   return arr;
