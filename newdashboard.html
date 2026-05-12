@@ -1,0 +1,1404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The AmaTOUR — 2026 Season</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, doc, getDoc, setDoc, collection, getDocs, writeBatch, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+// ── FIREBASE CONFIG ── Replace with your config after setup ──────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyCaghTrVnnsZOkvokGFxWjBEs_vzZyGK9Q",
+  authDomain: "amatour-2026.firebaseapp.com",
+  projectId: "amatour-2026",
+  storageBucket: "amatour-2026.firebasestorage.app",
+  messagingSenderId: "81292069661",
+  appId: "1:81292069661:web:78027d6d8825f63333eff4"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+
+// ── SEED DATA (from spreadsheet) ─────────────────────────────────────────────
+const SEED_PLAYERS = [
+  { id: 'p1',  name: 'Mike McCann',        tee: 'Blues' },
+  { id: 'p2',  name: 'Colton Richins',     tee: 'Blues' },
+  { id: 'p3',  name: 'David Bailey',       tee: 'Blues' },
+  { id: 'p4',  name: "John O'Farrell",     tee: 'Blues' },
+  { id: 'p5',  name: 'Chris Nielsen',      tee: 'Blues' },
+  { id: 'p6',  name: 'Luke Deppermann',    tee: 'Blues' },
+  { id: 'p7',  name: 'David Black',        tee: 'Blues' },
+  { id: 'p8',  name: 'Austin Bassett',     tee: 'Blues' },
+  { id: 'p9',  name: 'Parker Strong',      tee: 'Blues' },
+  { id: 'p10', name: 'Ozzie Johnson',      tee: 'Blues' },
+  { id: 'p11', name: 'Easton Walker',      tee: 'Blues' },
+  { id: 'p12', name: 'Adam Hewlett',       tee: 'Blues' },
+  { id: 'p13', name: 'Nic LeBaron',        tee: 'Blues' },
+  { id: 'p14', name: 'Alex Smith',         tee: 'Blues' },
+  { id: 'p15', name: 'Jonny Oliver',       tee: 'Blues' },
+  { id: 'p16', name: 'Michael Ryan',       tee: 'Blues' },
+  { id: 'p17', name: 'Kyle Karl',          tee: 'Blues' },
+  { id: 'p18', name: 'Davis Wesche',       tee: 'Blues' },
+  { id: 'p19', name: 'Preston Hymas',      tee: 'Blues' },
+  { id: 'p20', name: 'Ethan Hymas',        tee: 'Blues' },
+  { id: 'p21', name: 'Jack Barney',        tee: 'Blues' },
+  { id: 'p22', name: 'McKay Richins',      tee: 'Blues' },
+  { id: 'p23', name: 'Garrett Hale',       tee: 'Blues' },
+  { id: 'p24', name: 'Alex Stringfellow',  tee: 'Blues' },
+  { id: 'p25', name: 'Cesar Duenas',       tee: 'Reds'  },
+  { id: 'p26', name: 'Skyler Poteat',      tee: 'Blues' },
+  { id: 'p27', name: 'Derek Schetselaar',  tee: 'Blues' },
+  { id: 'p28', name: 'Josh Richins',       tee: 'Blues' },
+];
+
+const SEED_TEAMS = [
+  { id: 't1', name: 'Team 1', playerIds: ['p1','p2','p3'] },
+  { id: 't2', name: 'Team 2', playerIds: ['p4','p5','p6'] },
+  { id: 't3', name: 'Team 3', playerIds: ['p7','p8','p9'] },
+  { id: 't4', name: 'Team 4', playerIds: ['p10','p11','p12'] },
+  { id: 't5', name: 'Team 5', playerIds: ['p14','p15','p16'] },
+  { id: 't6', name: 'Team 6', playerIds: ['p17','p18','p13'] },
+  { id: 't7', name: 'Team 7', playerIds: ['p20','p19','p21'] },
+  { id: 't8', name: 'Team 8', playerIds: ['p22','p23','p24'] },
+  { id: 't9', name: 'Team 9', playerIds: ['p25','p26','p27'] },
+];
+
+const SEED_SCHEDULE = [
+  { id: 'e1',  name: 'April 1 – 15',     course: 'Stonebridge (Sunrise)',     type: 'regular', start: '2026-04-01', end: '2026-04-15', purse: 150 },
+  { id: 'e2',  name: 'April 16 – 30',    course: 'Glenmoor',                  type: 'regular', start: '2026-04-16', end: '2026-04-30', purse: 150 },
+  { id: 'e3',  name: 'May 9',            course: 'Bountiful Ridge',            type: 'regular', start: '2026-05-09', end: '2026-05-09', purse: 150 },
+  { id: 'e4',  name: 'May 16 – 31',      course: 'Bonneville',                type: 'regular', start: '2026-05-16', end: '2026-05-31', purse: 150 },
+  { id: 'e5',  name: 'June 6',           course: 'Mountain Dell Lake Course',  type: 'major',   start: '2026-06-06', end: '2026-06-06', purse: 200 },
+  { id: 'e6',  name: 'June 16 – 30',     course: 'Riverbend',                 type: 'regular', start: '2026-06-16', end: '2026-06-30', purse: 150 },
+  { id: 'e7',  name: 'July 1 – 15',      course: 'The Ridge',                 type: 'regular', start: '2026-07-01', end: '2026-07-15', purse: 150 },
+  { id: 'e8',  name: 'July 25',          course: 'Thanksgiving Point',         type: 'major',   start: '2026-07-25', end: '2026-07-25', purse: 200 },
+  { id: 'e9',  name: 'August 1 – 15',    course: 'Valley View',               type: 'regular', start: '2026-08-01', end: '2026-08-15', purse: 150 },
+  { id: 'e10', name: 'August 16 – 31',   course: 'River Oaks',                type: 'regular', start: '2026-08-16', end: '2026-08-31', purse: 150 },
+  { id: 'e11', name: 'September 1 – 10', course: 'Eaglewood',                 type: 'regular', start: '2026-09-01', end: '2026-09-10', purse: 150 },
+];
+
+const SEED_PAYOUTS = {
+  regular: [
+    { pos: 1, pct: 20 }, { pos: 2, pct: 15 }, { pos: 3, pct: 13 },
+    { pos: 4, pct: 11 }, { pos: 5, pct: 10 }, { pos: 6, pct: 9  },
+    { pos: 7, pct: 8  }, { pos: 8, pct: 7  }, { pos: 9, pct: 7  },
+  ],
+  major: [
+    { pos: 1, pct: 20 }, { pos: 2, pct: 15 }, { pos: 3, pct: 13 },
+    { pos: 4, pct: 11 }, { pos: 5, pct: 10 }, { pos: 6, pct: 9  },
+    { pos: 7, pct: 8  }, { pos: 8, pct: 7  }, { pos: 9, pct: 7  },
+  ],
+  scramble: [
+    { pos: 1, pct: 30 }, { pos: 2, pct: 25 }, { pos: 3, pct: 20 },
+    { pos: 4, pct: 15 }, { pos: 5, pct: 10 },
+  ],
+};
+
+// April 1-15 scores (Event 1 - already played)
+const SEED_EVENT1_SCORES = [
+  { playerId: 'p22', gross: 42 }, { playerId: 'p7',  gross: 42 },
+  { playerId: 'p2',  gross: 46 }, { playerId: 'p17', gross: 42 },
+  { playerId: 'p20', gross: 41 }, { playerId: 'p19', gross: 55 },
+  { playerId: 'p13', gross: 48 }, { playerId: 'p10', gross: 41 },
+  { playerId: 'p4',  gross: 38 }, { playerId: 'p5',  gross: 44 },
+  { playerId: 'p6',  gross: 51 }, { playerId: 'p8',  gross: 43 },
+  { playerId: 'p9',  gross: 47 }, { playerId: 'p14', gross: 47 },
+  { playerId: 'p15', gross: 49 }, { playerId: 'p16', gross: 52 },
+  { playerId: 'p1',  gross: 44 }, { playerId: 'p3',  gross: 50 },
+  { playerId: 'p11', gross: 46 }, { playerId: 'p12', gross: 52 },
+  { playerId: 'p18', gross: 47 }, { playerId: 'p23', gross: 48 },
+  { playerId: 'p24', gross: 52 }, { playerId: 'p25', gross: 39 },
+  { playerId: 'p26', gross: 49 }, { playerId: 'p27', gross: 51 },
+  { playerId: 'p28', gross: 45 }, { playerId: 'p21', gross: null },
+];
+
+// ── DB HELPERS ────────────────────────────────────────────────────────────────
+async function dbGet(docPath) {
+  const snap = await getDoc(doc(db, ...docPath.split('/')));
+  return snap.exists() ? snap.data() : null;
+}
+
+async function dbSet(docPath, data) {
+  await setDoc(doc(db, ...docPath.split('/')), data);
+}
+
+async function dbGetAll(collPath) {
+  const snap = await getDocs(collection(db, collPath));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+async function dbDelete(docPath) {
+  await deleteDoc(doc(db, ...docPath.split('/')));
+}
+
+// ── INIT / SEED ───────────────────────────────────────────────────────────────
+async function initializeData() {
+  // Check if already seeded
+  const meta = await dbGet('meta/seeded');
+  if (meta && meta.done) return;
+
+  const batch = writeBatch(db);
+
+  // Players
+  for (const p of SEED_PLAYERS) {
+    batch.set(doc(db, 'players', p.id), { name: p.name, tee: p.tee });
+  }
+
+  // Teams
+  for (const t of SEED_TEAMS) {
+    batch.set(doc(db, 'teams', t.id), { name: t.name, playerIds: t.playerIds });
+  }
+
+  // Schedule
+  for (const e of SEED_SCHEDULE) {
+    batch.set(doc(db, 'schedule', e.id), { name: e.name, course: e.course, type: e.type, start: e.start, end: e.end, purse: e.purse });
+  }
+
+  // Payouts
+  batch.set(doc(db, 'payouts', 'tables'), SEED_PAYOUTS);
+
+  // Event 1 scores (already played, closed)
+  batch.set(doc(db, 'eventScores', 'e1'), {
+    scores: SEED_EVENT1_SCORES,
+    closed: true,
+    closedAt: new Date().toISOString(),
+  });
+
+  // Mark seeded
+  batch.set(doc(db, 'meta', 'seeded'), { done: true, at: new Date().toISOString() });
+
+  await batch.commit();
+  console.log('Data seeded successfully');
+}
+
+// ── APP STATE ─────────────────────────────────────────────────────────────────
+let STATE = {
+  players: [],   // [{id, name, tee}]
+  teams: [],     // [{id, name, playerIds}]
+  schedule: [],  // [{id, name, course, type, start, end, purse}]
+  payouts: {},   // {regular:[...], major:[...], scramble:[...]}
+  scores: {},    // {eventId: {scores:[{playerId,gross}], closed:bool}}
+  loaded: false,
+};
+
+async function loadState() {
+  const [players, teams, schedule, payoutsDoc, scoresSnap] = await Promise.all([
+    dbGetAll('players'),
+    dbGetAll('teams'),
+    dbGetAll('schedule'),
+    dbGet('payouts/tables'),
+    getDocs(collection(db, 'eventScores')),
+  ]);
+
+  STATE.players  = players.sort((a,b) => a.name.localeCompare(b.name));
+  STATE.teams    = teams.sort((a,b) => a.name.localeCompare(b.name));
+  STATE.schedule = schedule.sort((a,b) => a.start.localeCompare(b.start));
+  STATE.payouts  = payoutsDoc || SEED_PAYOUTS;
+  STATE.scores   = {};
+  scoresSnap.docs.forEach(d => { STATE.scores[d.id] = d.data(); });
+  STATE.loaded   = true;
+}
+
+// ── COMPUTED HELPERS ──────────────────────────────────────────────────────────
+function getPlayer(id) { return STATE.players.find(p => p.id === id); }
+function getPlayerName(id) { const p = getPlayer(id); return p ? p.name : 'Unknown'; }
+
+function getEventStatus(ev) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const start = new Date(ev.start);
+  const end   = new Date(ev.end); end.setHours(23,59,59,999);
+  if (today < start) return 'upcoming';
+  if (today > end)   return 'past';
+  return 'inprogress';
+}
+
+function calcPoints(gross, purse, payouts, allScores) {
+  // allScores: [{playerId, gross}] sorted ascending
+  if (gross === null || gross === undefined) return 0;
+  const ranked = assignPositions(allScores.filter(s => s.gross !== null));
+  const entry  = ranked.find(s => s.gross === gross);
+  if (!entry) return 0;
+  const pos    = entry.pos;
+  const pct    = payouts[pos - 1] ? payouts[pos - 1].pct : 0;
+  return Math.round(purse * pct / 100);
+}
+
+function assignPositions(arr) {
+  // arr sorted ascending by gross
+  let groupNum = 0, i = 0;
+  while (i < arr.length) {
+    if (arr[i].gross === null) { arr[i].pos = null; arr[i].tied = false; i++; continue; }
+    groupNum++;
+    let j = i + 1;
+    while (j < arr.length && arr[j].gross !== null && arr[j].gross === arr[i].gross) j++;
+    const isTied = j - i > 1;
+    for (let k = i; k < j; k++) { arr[k].pos = groupNum; arr[k].tied = isTied; }
+    i = j;
+  }
+  return arr;
+}
+
+function assignRanks(arr, key) {
+  let groupNum = 0, i = 0;
+  while (i < arr.length) {
+    groupNum++;
+    let j = i + 1;
+    while (j < arr.length && arr[j][key] === arr[i][key]) j++;
+    const isTied = j - i > 1;
+    for (let k = i; k < j; k++) { arr[k].rank = groupNum; arr[k].tied = isTied; }
+    i = j;
+  }
+  return arr;
+}
+
+// Build individual standings from all closed events
+function buildStandings() {
+  const totals = {};
+  STATE.players.forEach(p => { totals[p.id] = { name: p.name, points: 0 }; });
+
+  for (const [eventId, eventData] of Object.entries(STATE.scores)) {
+    if (!eventData.closed) continue;
+    const ev = STATE.schedule.find(e => e.id === eventId);
+    if (!ev) continue;
+    const payoutTable = STATE.payouts[ev.type] || [];
+    const sorted = [...(eventData.scores || [])].filter(s => s.gross !== null).sort((a,b) => a.gross - b.gross);
+    const ranked = assignPositions(sorted);
+
+    for (const s of eventData.scores || []) {
+      if (!totals[s.playerId]) continue;
+      if (s.gross === null) continue;
+      const entry = ranked.find(r => r.playerId === s.playerId);
+      if (!entry) continue;
+      const pct = payoutTable[entry.pos - 1] ? payoutTable[entry.pos - 1].pct : 0;
+      totals[s.playerId].points += Math.round(ev.purse * pct / 100);
+    }
+  }
+
+  return assignRanks(
+    Object.entries(totals).map(([id, d]) => ({ id, ...d })).sort((a,b) => b.points - a.points),
+    'points'
+  );
+}
+
+// Build team standings
+function buildTeamStandings() {
+  const totals = {};
+  STATE.teams.forEach(t => { totals[t.id] = { name: t.name, playerIds: t.playerIds, points: 0, wins: 0 }; });
+
+  for (const [eventId, eventData] of Object.entries(STATE.scores)) {
+    if (!eventData.closed) continue;
+    const ev = STATE.schedule.find(e => e.id === eventId);
+    if (!ev) continue;
+
+    // Calc team gross scores (best 2 of 3)
+    const teamScores = STATE.teams.map(t => {
+      const memberScores = (t.playerIds || [])
+        .map(pid => { const s = (eventData.scores||[]).find(x => x.playerId === pid); return s ? s.gross : null; })
+        .filter(g => g !== null)
+        .sort((a,b) => a - b);
+      const best2 = memberScores.slice(0, 2);
+      const gross = best2.length === 2 ? best2[0] + best2[1] : (best2.length === 1 ? best2[0] : null);
+      return { teamId: t.id, gross };
+    }).filter(t => t.gross !== null).sort((a,b) => a.gross - b.gross);
+
+    const ranked = assignPositions(teamScores);
+    // Team payout: use scramble table or regular based on event
+    const payoutTable = STATE.payouts.scramble || [];
+
+    for (const ts of ranked) {
+      if (!totals[ts.teamId]) continue;
+      const pct = payoutTable[ts.pos - 1] ? payoutTable[ts.pos - 1].pct : 0;
+      const pts = Math.round(ev.purse * pct / 100);
+      totals[ts.teamId].points += pts;
+      if (ts.pos === 1) totals[ts.teamId].wins++;
+    }
+  }
+
+  return assignRanks(
+    Object.entries(totals).map(([id, d]) => ({ id, ...d })).sort((a,b) => b.points - a.points),
+    'points'
+  );
+}
+
+// ── RENDER HELPERS ────────────────────────────────────────────────────────────
+function rankBadge(r, tied) {
+  const label = tied ? 'T-' + r : String(r);
+  const cls   = r === 1 ? 'rank-1' : r === 2 ? 'rank-2' : r === 3 ? 'rank-3' : 'rank-n';
+  const style = tied ? ' style="font-size:11px;"' : '';
+  return `<div class="rank-badge ${cls}"${style}>${label}</div>`;
+}
+
+function rowClass(rank) { return rank === 1 ? 'gold-row' : rank === 2 ? 'silver-row' : rank === 3 ? 'bronze-row' : ''; }
+
+function typeBadge(type) {
+  const map = { regular:['Regular','tb-regular'], major:['Major','tb-major'], scramble:['Scramble','tb-scramble'], championship:['Championship','tb-championship'] };
+  const [label, cls] = map[type] || ['Event','tb-regular'];
+  return `<span class="type-badge ${cls}">${label}</span>`;
+}
+
+function loadingHtml() { return `<div class="loading-state"><div class="spinner"></div><span>Loading...</span></div>`; }
+function errorHtml(e)  { return `<div class="error-box">Error loading data.<br><small>${e.message}</small></div>`; }
+
+// ── PAGE: INDIVIDUAL STANDINGS ────────────────────────────────────────────────
+function renderLeaderboard() {
+  const el = document.getElementById('lb-content');
+  try {
+    const standings = buildStandings();
+    const leader    = standings[0];
+    const eventsPlayed = Object.values(STATE.scores).filter(s => s.closed).length;
+    const onBoard   = standings.filter(p => p.points > 0).length;
+
+    el.innerHTML = `
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-label">Players</div><div class="stat-value">${STATE.players.length}</div><div class="stat-sub">in the field</div></div>
+        <div class="stat-card"><div class="stat-label">Events Played</div><div class="stat-value">${eventsPlayed}</div><div class="stat-sub">of ${STATE.schedule.length} scheduled</div></div>
+        <div class="stat-card"><div class="stat-label">Points Leader</div><div class="stat-value" style="font-size:18px;color:var(--gold);padding-top:8px;">${leader ? leader.name : '—'}</div><div class="stat-sub">${leader ? leader.points + ' pts' : ''}</div></div>
+        <div class="stat-card"><div class="stat-label">On the Board</div><div class="stat-value">${onBoard}</div><div class="stat-sub">of ${STATE.players.length} players</div></div>
+      </div>
+      <div class="section-header">
+        <div class="section-title">INDIVIDUAL STANDINGS</div>
+        <button class="refresh-btn" onclick="renderLeaderboard()">↺ Refresh</button>
+      </div>
+      <div class="lb-table">
+        <div class="lb-head"><div>Rank</div><div>Player</div><div class="col-r">Points</div><div class="col-r">Tee</div></div>
+        ${standings.map(p => `
+          <div class="lb-row ${rowClass(p.rank)}">
+            <div>${rankBadge(p.rank, p.tied)}</div>
+            <div><div class="player-name">${p.name}</div></div>
+            <div class="col-r"><span class="pts-num ${p.points===0?'pts-zero':''}">${p.points}</span></div>
+            <div class="col-r" style="color:var(--muted);font-size:12px;">${STATE.players.find(pl=>pl.name===p.name)?.tee||''}</div>
+          </div>`).join('')}
+      </div>`;
+  } catch(e) { el.innerHTML = errorHtml(e); }
+}
+
+// ── PAGE: TEAM STANDINGS ──────────────────────────────────────────────────────
+function renderTeams() {
+  const el = document.getElementById('teams-content');
+  try {
+    const standings = buildTeamStandings();
+    el.innerHTML = `
+      <div class="section-header">
+        <div class="section-title">TEAM STANDINGS</div>
+        <button class="refresh-btn" onclick="renderTeams()">↺ Refresh</button>
+      </div>
+      <div class="lb-table">
+        <div class="team-lb-head"><div>Rank</div><div>Team</div><div class="col-r">Points</div><div class="col-r">Wins</div></div>
+        ${standings.map(t => {
+          const members = (t.playerIds||[]).map(id => getPlayerName(id));
+          return `<div class="team-lb-row ${rowClass(t.rank)}">
+            <div>${rankBadge(t.rank, t.tied)}</div>
+            <div>
+              <div class="player-name">${t.name}</div>
+              <div class="player-sub">${members.join(' · ')}</div>
+            </div>
+            <div class="col-r"><span class="pts-num ${t.points===0?'pts-zero':''}">${t.points}</span></div>
+            <div class="col-muted">${t.wins}</div>
+          </div>`;
+        }).join('')}
+      </div>`;
+  } catch(e) { el.innerHTML = errorHtml(e); }
+}
+
+// ── PAGE: EVENTS ──────────────────────────────────────────────────────────────
+function renderEvents() {
+  const el = document.getElementById('events-content');
+  el.innerHTML = `
+    <div class="section-header" style="margin-bottom:18px;">
+      <div class="section-title">2026 SCHEDULE</div>
+      <button class="refresh-btn" onclick="renderEvents()">↺ Refresh</button>
+    </div>
+    <div class="events-grid">
+      ${STATE.schedule.map((ev, i) => renderEventCard(ev)).join('')}
+    </div>`;
+}
+
+function renderEventCard(ev) {
+  const eventData  = STATE.scores[ev.id];
+  const hasClosed  = eventData && eventData.closed;
+  const hasScores  = eventData && (eventData.scores||[]).some(s => s.gross !== null);
+  const status     = getEventStatus(ev);
+
+  if (hasClosed && hasScores) {
+    // Show completed podium
+    const sorted = [...(eventData.scores||[])].filter(s=>s.gross!==null).sort((a,b)=>a.gross-b.gross);
+    const ranked = assignPositions(sorted);
+    const top3   = ranked.slice(0,3);
+    return `<div class="event-card" onclick="showEventDetail('${ev.id}')">
+      <div class="ecard-head"><div><div class="ecard-name">${ev.name}</div><div class="ecard-course">${ev.course}</div></div>${typeBadge(ev.type)}</div>
+      <div class="ecard-body">
+        ${top3.map(p => `<div class="podium-row">
+          <span class="podium-pos">${p.tied?'T-'+p.pos:p.pos}</span>
+          <span class="podium-name">${getPlayerName(p.playerId)}</span>
+          <span class="podium-score">${p.gross}</span>
+        </div>`).join('')}
+      </div>
+    </div>`;
+  } else if (hasScores && !hasClosed) {
+    // In progress with some scores
+    return `<div class="event-card upcoming" style="cursor:default;">
+      <div class="ecard-head"><div><div class="ecard-name">${ev.name}</div><div class="ecard-course">${ev.course}</div></div><span class="type-badge tb-inprogress">In Progress</span></div>
+      <div class="ecard-body"><div class="upcoming-label">Scores being collected...</div></div>
+    </div>`;
+  } else {
+    const inProgress = status === 'inprogress';
+    return `<div class="event-card upcoming" style="cursor:default;">
+      <div class="ecard-head"><div><div class="ecard-name">${ev.name}</div><div class="ecard-course">${ev.course}</div></div>
+        <span class="type-badge ${inProgress?'tb-inprogress':'tb-upcoming'}">${inProgress?'In Progress':'Upcoming'}</span>
+      </div>
+      <div class="ecard-body">
+        <div class="upcoming-label">Type: <strong>${ev.type.charAt(0).toUpperCase()+ev.type.slice(1)}</strong></div>
+        <div class="upcoming-label" style="margin-top:4px;font-size:11px;opacity:0.7;">No scores recorded yet</div>
+      </div>
+    </div>`;
+  }
+}
+
+function showEventDetail(eventId) {
+  const ev        = STATE.schedule.find(e => e.id === eventId);
+  const eventData = STATE.scores[eventId] || { scores: [], closed: false };
+  const el        = document.getElementById('events-content');
+  const payoutTable = STATE.payouts[ev.type] || [];
+
+  const allScores = [...(eventData.scores||[])].sort((a,b) => {
+    if (a.gross===null && b.gross===null) return 0;
+    if (a.gross===null) return 1;
+    if (b.gross===null) return -1;
+    return a.gross - b.gross;
+  });
+
+  const ranked = assignPositions(allScores.filter(s=>s.gross!==null));
+  const withPoints = allScores.map(s => {
+    const r = ranked.find(r => r.playerId === s.playerId);
+    let pts = 0;
+    if (eventData.closed && r) {
+      const pct = payoutTable[r.pos-1] ? payoutTable[r.pos-1].pct : 0;
+      pts = Math.round(ev.purse * pct / 100);
+    }
+    return { ...s, pos: r ? r.pos : null, tied: r ? r.tied : false, points: pts };
+  });
+
+  el.innerHTML = `
+    <button class="back-btn" onclick="renderEvents()">← Back to Events</button>
+    <div class="detail-header">
+      <div><div class="detail-title">${ev.name.toUpperCase()}</div><div class="detail-sub">${ev.course} · Purse: ${ev.purse} pts</div></div>
+      ${typeBadge(ev.type)}
+    </div>
+    <div class="detail-table">
+      <div class="dt-head indiv-grid"><div>Pos</div><div>Player</div><div class="col-r">Tee</div><div class="col-r">Gross</div><div class="col-r">Pts</div></div>
+      ${withPoints.map(s => {
+        const dnp = s.gross === null;
+        return `<div class="dt-row indiv-grid ${dnp?'dnp':''}">
+          <div>${dnp ? '<span style="color:var(--muted);font-size:11px;">—</span>' : rankBadge(s.pos, s.tied)}</div>
+          <div class="player-name">${getPlayerName(s.playerId)}</div>
+          <div class="col-r" style="color:var(--muted);font-size:12px;">${STATE.players.find(p=>p.id===s.playerId)?.tee||''}</div>
+          <div class="col-r"><span class="score-num">${s.gross !== null ? s.gross : '—'}</span></div>
+          <div class="col-r"><span class="pts-num ${s.points===0?'pts-zero':''}">${eventData.closed ? s.points : '—'}</span></div>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+// ── ADMIN ─────────────────────────────────────────────────────────────────────
+const ADMIN_PASSWORD = 'we_are_inevitable';
+let adminUnlocked = false;
+let adminSection  = 'roster';
+
+function renderAdmin() {
+  const el = document.getElementById('admin-content');
+
+  if (!adminUnlocked) {
+    el.innerHTML = `
+      <div class="admin-lock">
+        <div class="lock-icon">🔒</div>
+        <div class="lock-title">Admin Access</div>
+        <div class="lock-sub">Enter the admin password to continue</div>
+        <div class="lock-form">
+          <input type="password" id="admin-pw" class="admin-input" placeholder="Password" onkeydown="if(event.key==='Enter')checkAdminPw()">
+          <button class="admin-btn-primary" onclick="checkAdminPw()">Unlock</button>
+        </div>
+        <div id="pw-error" style="color:var(--red);font-size:12px;margin-top:8px;display:none;">Incorrect password</div>
+      </div>`;
+    setTimeout(() => document.getElementById('admin-pw')?.focus(), 50);
+    return;
+  }
+
+  el.innerHTML = `
+    <div class="admin-layout">
+      <div class="admin-sidebar">
+        <div class="admin-nav-label">MANAGEMENT</div>
+        ${['roster','teams','schedule','payouts','scores'].map(s => `
+          <button class="admin-nav-btn ${adminSection===s?'active':''}" onclick="switchAdminSection('${s}')">
+            ${{roster:'👥 Roster',teams:'🏌️ Teams',schedule:'📅 Schedule',payouts:'💰 Payouts',scores:'🏆 Scores'}[s]}
+          </button>`).join('')}
+        <div style="margin-top:auto;padding-top:24px;border-top:1px solid var(--border);margin-top:24px;">
+          <button class="danger-btn" onclick="confirmHardReset()">⚠️ Hard Reset</button>
+        </div>
+      </div>
+      <div class="admin-main" id="admin-section-content">
+        ${loadingHtml()}
+      </div>
+    </div>`;
+
+  renderAdminSection();
+}
+
+function switchAdminSection(section) {
+  adminSection = section;
+  document.querySelectorAll('.admin-nav-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.admin-nav-btn').forEach(b => { if (b.textContent.toLowerCase().includes(section)) b.classList.add('active'); });
+  renderAdminSection();
+}
+
+function renderAdminSection() {
+  const el = document.getElementById('admin-section-content');
+  if (!el) return;
+  switch(adminSection) {
+    case 'roster':   renderRosterSection(el); break;
+    case 'teams':    renderTeamsSection(el);  break;
+    case 'schedule': renderScheduleSection(el); break;
+    case 'payouts':  renderPayoutsSection(el); break;
+    case 'scores':   renderScoresSection(el); break;
+  }
+}
+
+// ── ADMIN: ROSTER ─────────────────────────────────────────────────────────────
+function renderRosterSection(el) {
+  el.innerHTML = `
+    <div class="admin-section-header">
+      <div class="admin-section-title">Player Roster</div>
+      <button class="admin-btn-primary" onclick="showAddPlayerModal()">+ Add Player</button>
+    </div>
+    <div class="admin-table">
+      <div class="admin-table-head" style="grid-template-columns:1fr 100px 120px;">
+        <div>Name</div><div>Tee Box</div><div>Actions</div>
+      </div>
+      ${STATE.players.map(p => `
+        <div class="admin-table-row" style="grid-template-columns:1fr 100px 120px;" id="roster-row-${p.id}">
+          <div class="player-name">${p.name}</div>
+          <div><span class="tee-badge tee-${p.tee.toLowerCase()}">${p.tee}</span></div>
+          <div style="display:flex;gap:6px;">
+            <button class="icon-btn" onclick="showEditPlayerModal('${p.id}')">✏️</button>
+            <button class="icon-btn danger" onclick="confirmDeletePlayer('${p.id}')">🗑️</button>
+          </div>
+        </div>`).join('')}
+    </div>
+    <div id="player-modal" class="modal-overlay" style="display:none;"></div>`;
+}
+
+function showAddPlayerModal() {
+  showPlayerModal(null);
+}
+
+function showEditPlayerModal(id) {
+  showPlayerModal(id);
+}
+
+function showPlayerModal(id) {
+  const player = id ? STATE.players.find(p => p.id === id) : null;
+  const title  = player ? 'Edit Player' : 'Add Player';
+  document.getElementById('player-modal').style.display = 'flex';
+  document.getElementById('player-modal').innerHTML = `
+    <div class="modal">
+      <div class="modal-title">${title}</div>
+      <label class="modal-label">Name</label>
+      <input class="admin-input" id="modal-name" value="${player ? player.name : ''}" placeholder="Full name">
+      <label class="modal-label">Tee Box</label>
+      <select class="admin-select" id="modal-tee">
+        <option value="Blues" ${player?.tee==='Blues'?'selected':''}>Blues</option>
+        <option value="Whites" ${player?.tee==='Whites'?'selected':''}>Whites</option>
+        <option value="Reds" ${player?.tee==='Reds'?'selected':''}>Reds</option>
+      </select>
+      <div class="modal-actions">
+        <button class="admin-btn-secondary" onclick="closeModal('player-modal')">Cancel</button>
+        <button class="admin-btn-primary" onclick="savePlayer('${id||''}')">Save</button>
+      </div>
+    </div>`;
+}
+
+async function savePlayer(id) {
+  const name = document.getElementById('modal-name').value.trim();
+  const tee  = document.getElementById('modal-tee').value;
+  if (!name) { alert('Name is required'); return; }
+
+  const pid = id || 'p' + Date.now();
+  await dbSet('players/' + pid, { name, tee });
+
+  if (id) { const p = STATE.players.find(p => p.id === id); if (p) { p.name = name; p.tee = tee; } }
+  else { STATE.players.push({ id: pid, name, tee }); STATE.players.sort((a,b) => a.name.localeCompare(b.name)); }
+
+  closeModal('player-modal');
+  renderAdminSection();
+  renderLeaderboard();
+}
+
+async function confirmDeletePlayer(id) {
+  const p = STATE.players.find(p => p.id === id);
+  if (!confirm(`Remove ${p?.name} from the roster? This cannot be undone.`)) return;
+  await dbDelete('players/' + id);
+  STATE.players = STATE.players.filter(p => p.id !== id);
+  // Also remove from teams
+  for (const t of STATE.teams) {
+    if (t.playerIds.includes(id)) {
+      t.playerIds = t.playerIds.filter(pid => pid !== id);
+      await dbSet('teams/' + t.id, { name: t.name, playerIds: t.playerIds });
+    }
+  }
+  renderAdminSection();
+  renderLeaderboard();
+}
+
+// ── ADMIN: TEAMS ──────────────────────────────────────────────────────────────
+function renderTeamsSection(el) {
+  const assignedIds = new Set(STATE.teams.flatMap(t => t.playerIds));
+  const unassigned  = STATE.players.filter(p => !assignedIds.has(p.id));
+
+  el.innerHTML = `
+    <div class="admin-section-header">
+      <div class="admin-section-title">Team Management</div>
+      <button class="admin-btn-primary" onclick="showAddTeamModal()">+ Add Team</button>
+    </div>
+    ${STATE.teams.map(t => `
+      <div class="team-admin-card" id="team-card-${t.id}">
+        <div class="team-admin-header">
+          <span class="player-name">${t.name}</span>
+          <div style="display:flex;gap:6px;">
+            <button class="icon-btn" onclick="showAddToTeamModal('${t.id}')">+ Player</button>
+            <button class="icon-btn danger" onclick="confirmDeleteTeam('${t.id}')">🗑️</button>
+          </div>
+        </div>
+        <div class="team-members-list">
+          ${(t.playerIds||[]).map(pid => {
+            const p = getPlayer(pid);
+            return p ? `<div class="team-member-row">
+              <span>${p.name}</span>
+              <span class="tee-badge tee-${p.tee.toLowerCase()}">${p.tee}</span>
+              <button class="icon-btn danger sm" onclick="removeFromTeam('${t.id}','${pid}')">✕</button>
+            </div>` : '';
+          }).join('')}
+          ${t.playerIds.length === 0 ? '<div style="color:var(--muted);font-size:12px;padding:8px 0;">No players assigned</div>' : ''}
+        </div>
+      </div>`).join('')}
+    ${unassigned.length > 0 ? `
+      <div class="team-admin-card" style="border-color:rgba(248,113,113,0.2);">
+        <div class="team-admin-header"><span class="player-name" style="color:var(--red);">Unassigned Players</span></div>
+        <div class="team-members-list">
+          ${unassigned.map(p => `<div class="team-member-row">
+            <span>${p.name}</span>
+            <span class="tee-badge tee-${p.tee.toLowerCase()}">${p.tee}</span>
+          </div>`).join('')}
+        </div>
+      </div>` : ''}
+    <div id="team-modal" class="modal-overlay" style="display:none;"></div>`;
+}
+
+function showAddTeamModal() {
+  document.getElementById('team-modal').style.display = 'flex';
+  document.getElementById('team-modal').innerHTML = `
+    <div class="modal">
+      <div class="modal-title">Add Team</div>
+      <label class="modal-label">Team Name</label>
+      <input class="admin-input" id="modal-team-name" placeholder="e.g. Team 10">
+      <div class="modal-actions">
+        <button class="admin-btn-secondary" onclick="closeModal('team-modal')">Cancel</button>
+        <button class="admin-btn-primary" onclick="saveNewTeam()">Save</button>
+      </div>
+    </div>`;
+}
+
+async function saveNewTeam() {
+  const name = document.getElementById('modal-team-name').value.trim();
+  if (!name) { alert('Team name required'); return; }
+  const id = 't' + Date.now();
+  await dbSet('teams/' + id, { name, playerIds: [] });
+  STATE.teams.push({ id, name, playerIds: [] });
+  STATE.teams.sort((a,b) => a.name.localeCompare(b.name));
+  closeModal('team-modal');
+  renderAdminSection();
+}
+
+function showAddToTeamModal(teamId) {
+  const team = STATE.teams.find(t => t.id === teamId);
+  const assignedIds = new Set(STATE.teams.flatMap(t => t.playerIds));
+  const available = STATE.players.filter(p => !assignedIds.has(p.id));
+  document.getElementById('team-modal').style.display = 'flex';
+  document.getElementById('team-modal').innerHTML = `
+    <div class="modal">
+      <div class="modal-title">Add Player to ${team.name}</div>
+      <label class="modal-label">Select Player</label>
+      <select class="admin-select" id="modal-player-select">
+        <option value="">— Choose player —</option>
+        ${available.map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
+      </select>
+      <div class="modal-actions">
+        <button class="admin-btn-secondary" onclick="closeModal('team-modal')">Cancel</button>
+        <button class="admin-btn-primary" onclick="addToTeam('${teamId}')">Add</button>
+      </div>
+    </div>`;
+}
+
+async function addToTeam(teamId) {
+  const pid  = document.getElementById('modal-player-select').value;
+  if (!pid) return;
+  const team = STATE.teams.find(t => t.id === teamId);
+  if (!team.playerIds.includes(pid)) {
+    team.playerIds.push(pid);
+    await dbSet('teams/' + teamId, { name: team.name, playerIds: team.playerIds });
+  }
+  closeModal('team-modal');
+  renderAdminSection();
+  renderTeams();
+}
+
+async function removeFromTeam(teamId, playerId) {
+  const team = STATE.teams.find(t => t.id === teamId);
+  team.playerIds = team.playerIds.filter(id => id !== playerId);
+  await dbSet('teams/' + teamId, { name: team.name, playerIds: team.playerIds });
+  renderAdminSection();
+  renderTeams();
+}
+
+async function confirmDeleteTeam(teamId) {
+  const t = STATE.teams.find(t => t.id === teamId);
+  if (!confirm(`Delete ${t?.name}? This cannot be undone.`)) return;
+  await dbDelete('teams/' + teamId);
+  STATE.teams = STATE.teams.filter(t => t.id !== teamId);
+  renderAdminSection();
+  renderTeams();
+}
+
+// ── ADMIN: SCHEDULE ───────────────────────────────────────────────────────────
+function renderScheduleSection(el) {
+  el.innerHTML = `
+    <div class="admin-section-header">
+      <div class="admin-section-title">Schedule</div>
+      <button class="admin-btn-primary" onclick="showEventModal(null)">+ Add Event</button>
+    </div>
+    <div class="admin-table">
+      <div class="admin-table-head" style="grid-template-columns:1fr 140px 100px 80px 120px;">
+        <div>Event</div><div>Course</div><div>Type</div><div>Purse</div><div>Actions</div>
+      </div>
+      ${STATE.schedule.map(ev => `
+        <div class="admin-table-row" style="grid-template-columns:1fr 140px 100px 80px 120px;">
+          <div>
+            <div class="player-name">${ev.name}</div>
+            <div style="font-size:11px;color:var(--muted);">${ev.start} → ${ev.end}</div>
+          </div>
+          <div style="font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${ev.course}</div>
+          <div>${typeBadge(ev.type)}</div>
+          <div style="font-size:13px;">${ev.purse} pts</div>
+          <div style="display:flex;gap:6px;">
+            <button class="icon-btn" onclick="showEventModal('${ev.id}')">✏️</button>
+            <button class="icon-btn danger" onclick="confirmDeleteEvent('${ev.id}')">🗑️</button>
+          </div>
+        </div>`).join('')}
+    </div>
+    <div id="event-modal" class="modal-overlay" style="display:none;"></div>`;
+}
+
+function showEventModal(id) {
+  const ev = id ? STATE.schedule.find(e => e.id === id) : null;
+  document.getElementById('event-modal').style.display = 'flex';
+  document.getElementById('event-modal').innerHTML = `
+    <div class="modal" style="max-width:480px;">
+      <div class="modal-title">${ev ? 'Edit Event' : 'Add Event'}</div>
+      <label class="modal-label">Event Name</label>
+      <input class="admin-input" id="ev-name" value="${ev?.name||''}" placeholder="e.g. April 1 – 15">
+      <label class="modal-label">Course</label>
+      <input class="admin-input" id="ev-course" value="${ev?.course||''}" placeholder="Course name">
+      <label class="modal-label">Type</label>
+      <select class="admin-select" id="ev-type">
+        <option value="regular"  ${ev?.type==='regular'?'selected':''}>Regular</option>
+        <option value="major"    ${ev?.type==='major'?'selected':''}>Major</option>
+        <option value="scramble" ${ev?.type==='scramble'?'selected':''}>Scramble</option>
+        <option value="championship" ${ev?.type==='championship'?'selected':''}>Championship</option>
+      </select>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div>
+          <label class="modal-label">Start Date</label>
+          <input class="admin-input" id="ev-start" type="date" value="${ev?.start||''}">
+        </div>
+        <div>
+          <label class="modal-label">End Date</label>
+          <input class="admin-input" id="ev-end" type="date" value="${ev?.end||''}">
+        </div>
+      </div>
+      <label class="modal-label">Purse (points)</label>
+      <input class="admin-input" id="ev-purse" type="number" value="${ev?.purse||150}" placeholder="150">
+      <div class="modal-actions">
+        <button class="admin-btn-secondary" onclick="closeModal('event-modal')">Cancel</button>
+        <button class="admin-btn-primary" onclick="saveEvent('${id||''}')">Save</button>
+      </div>
+    </div>`;
+}
+
+async function saveEvent(id) {
+  const name   = document.getElementById('ev-name').value.trim();
+  const course = document.getElementById('ev-course').value.trim();
+  const type   = document.getElementById('ev-type').value;
+  const start  = document.getElementById('ev-start').value;
+  const end    = document.getElementById('ev-end').value;
+  const purse  = parseInt(document.getElementById('ev-purse').value) || 150;
+  if (!name || !course || !start || !end) { alert('All fields required'); return; }
+
+  const eid  = id || 'e' + Date.now();
+  const data = { name, course, type, start, end, purse };
+  await dbSet('schedule/' + eid, data);
+
+  if (id) { const idx = STATE.schedule.findIndex(e => e.id === id); if (idx >= 0) STATE.schedule[idx] = { id, ...data }; }
+  else { STATE.schedule.push({ id: eid, ...data }); STATE.schedule.sort((a,b) => a.start.localeCompare(b.start)); }
+
+  closeModal('event-modal');
+  renderAdminSection();
+  renderEvents();
+}
+
+async function confirmDeleteEvent(id) {
+  const ev = STATE.schedule.find(e => e.id === id);
+  if (!confirm(`Delete "${ev?.name}"? All associated scores will be lost.`)) return;
+  await dbDelete('schedule/' + id);
+  await dbDelete('eventScores/' + id);
+  STATE.schedule = STATE.schedule.filter(e => e.id !== id);
+  delete STATE.scores[id];
+  renderAdminSection();
+  renderEvents();
+}
+
+// ── ADMIN: PAYOUTS ────────────────────────────────────────────────────────────
+function renderPayoutsSection(el) {
+  const types = ['regular', 'major', 'scramble'];
+  el.innerHTML = `
+    <div class="admin-section-header">
+      <div class="admin-section-title">Payout Tables</div>
+      <button class="admin-btn-primary" onclick="savePayouts()">💾 Save Changes</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;">
+      ${types.map(type => {
+        const rows = STATE.payouts[type] || [];
+        return `<div class="payout-card">
+          <div class="payout-title">${type.charAt(0).toUpperCase()+type.slice(1)} Events</div>
+          <div class="payout-table-head"><span>Place</span><span>Pct %</span></div>
+          ${rows.map((r,i) => `<div class="payout-row">
+            <span style="color:var(--muted);">${i+1}${['st','nd','rd'][i]||'th'}</span>
+            <input class="payout-input" id="pct-${type}-${i}" type="number" value="${r.pct}" min="0" max="100" step="0.1">
+          </div>`).join('')}
+          <button class="icon-btn" style="margin-top:8px;width:100%;justify-content:center;" onclick="addPayoutRow('${type}')">+ Add Place</button>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+function addPayoutRow(type) {
+  STATE.payouts[type] = STATE.payouts[type] || [];
+  STATE.payouts[type].push({ pos: STATE.payouts[type].length + 1, pct: 0 });
+  renderAdminSection();
+}
+
+async function savePayouts() {
+  const types = ['regular', 'major', 'scramble'];
+  for (const type of types) {
+    const rows = STATE.payouts[type] || [];
+    rows.forEach((r, i) => {
+      const input = document.getElementById(`pct-${type}-${i}`);
+      if (input) r.pct = parseFloat(input.value) || 0;
+    });
+  }
+  await dbSet('payouts/tables', STATE.payouts);
+  showToast('Payout tables saved!');
+  renderLeaderboard();
+  renderTeams();
+}
+
+// ── ADMIN: SCORES ─────────────────────────────────────────────────────────────
+let selectedEventId = null;
+
+function renderScoresSection(el) {
+  el.innerHTML = `
+    <div class="admin-section-header">
+      <div class="admin-section-title">Score Management</div>
+    </div>
+    <div style="margin-bottom:20px;">
+      <label class="modal-label">Select Event</label>
+      <select class="admin-select" id="score-event-select" onchange="selectScoringEvent(this.value)" style="max-width:320px;">
+        <option value="">— Choose an event —</option>
+        ${STATE.schedule.map(ev => {
+          const data = STATE.scores[ev.id];
+          const status = data?.closed ? '✓ Closed' : data?.scores?.some(s=>s.gross!==null) ? '● In Progress' : '○ No Scores';
+          return `<option value="${ev.id}" ${selectedEventId===ev.id?'selected':''}>${ev.name} (${status})</option>`;
+        }).join('')}
+      </select>
+    </div>
+    <div id="score-entry-area">
+      ${selectedEventId ? renderScoreEntry() : '<div style="color:var(--muted);font-size:13px;">Select an event above to enter scores.</div>'}
+    </div>`;
+}
+
+function selectScoringEvent(id) {
+  selectedEventId = id;
+  document.getElementById('score-entry-area').innerHTML = id ? renderScoreEntry() : '<div style="color:var(--muted);font-size:13px;">Select an event above to enter scores.</div>';
+}
+
+function renderScoreEntry() {
+  const ev        = STATE.schedule.find(e => e.id === selectedEventId);
+  const eventData = STATE.scores[selectedEventId] || { scores: [], closed: false };
+  const isClosed  = eventData.closed;
+
+  // Build score map
+  const scoreMap = {};
+  (eventData.scores||[]).forEach(s => { scoreMap[s.playerId] = s.gross; });
+
+  return `
+    <div class="score-event-header">
+      <div>
+        <div class="player-name" style="font-size:16px;">${ev.name}</div>
+        <div style="font-size:12px;color:var(--muted);">${ev.course} · ${ev.type} · ${ev.purse} pts purse</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        ${isClosed
+          ? `<span style="color:var(--accent);font-size:12px;font-weight:600;">✓ ROUND CLOSED</span>
+             <button class="admin-btn-secondary" onclick="reopenRound('${selectedEventId}')">Reopen Round</button>`
+          : `<button class="admin-btn-primary" onclick="saveScores('${selectedEventId}')">💾 Save Scores</button>
+             <button class="admin-btn-secondary" onclick="closeRound('${selectedEventId}')">Close Round</button>`}
+      </div>
+    </div>
+    <div class="admin-table" style="margin-top:12px;">
+      <div class="admin-table-head" style="grid-template-columns:1fr 80px 100px ${isClosed?'80px':''};">
+        <div>Player</div><div>Tee</div><div>${isClosed?'Score':'Enter Score'}</div>${isClosed?'<div class="col-r">Points</div>':''}
+      </div>
+      ${STATE.players.map(p => {
+        const gross  = scoreMap[p.id] !== undefined ? scoreMap[p.id] : null;
+        const payoutTable = STATE.payouts[ev.type] || [];
+
+        let pts = 0;
+        if (isClosed && gross !== null) {
+          const sortedScores = (eventData.scores||[]).filter(s=>s.gross!==null).sort((a,b)=>a.gross-b.gross);
+          const ranked = assignPositions(sortedScores);
+          const entry  = ranked.find(r => r.playerId === p.id);
+          if (entry) {
+            const pct = payoutTable[entry.pos-1] ? payoutTable[entry.pos-1].pct : 0;
+            pts = Math.round(ev.purse * pct / 100);
+          }
+        }
+
+        return `<div class="admin-table-row" style="grid-template-columns:1fr 80px 100px ${isClosed?'80px':''};">
+          <div class="player-name">${p.name}</div>
+          <div><span class="tee-badge tee-${p.tee.toLowerCase()}">${p.tee}</span></div>
+          <div>
+            ${isClosed
+              ? `<span style="font-family:var(--font-display);font-size:18px;">${gross !== null ? gross : '—'}</span>`
+              : `<input class="score-input" id="score-${p.id}" type="number" value="${gross !== null ? gross : ''}" placeholder="—" min="50" max="150" ${isClosed?'disabled':''}>`
+            }
+          </div>
+          ${isClosed ? `<div class="col-r"><span class="pts-num ${pts===0?'pts-zero':''}">${pts}</span></div>` : ''}
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
+async function saveScores(eventId) {
+  const ev = STATE.schedule.find(e => e.id === eventId);
+  const scores = STATE.players.map(p => {
+    const input = document.getElementById('score-' + p.id);
+    const val   = input ? input.value.trim() : '';
+    return { playerId: p.id, gross: val !== '' ? parseInt(val) : null };
+  });
+
+  const data = { scores, closed: false };
+  await dbSet('eventScores/' + eventId, data);
+  STATE.scores[eventId] = data;
+  showToast('Scores saved!');
+  renderScoresSection(document.getElementById('admin-section-content'));
+  renderEvents();
+  renderLeaderboard();
+}
+
+async function closeRound(eventId) {
+  if (!confirm('Close this round? Points will be calculated and locked. You can reopen it later if needed.')) return;
+  const existing = STATE.scores[eventId] || { scores: [] };
+  const data = { ...existing, closed: true, closedAt: new Date().toISOString() };
+  await dbSet('eventScores/' + eventId, data);
+  STATE.scores[eventId] = data;
+  showToast('Round closed! Points calculated.');
+  selectedEventId = eventId;
+  renderAdminSection();
+  renderEvents();
+  renderLeaderboard();
+  renderTeams();
+}
+
+async function reopenRound(eventId) {
+  if (!confirm('Reopen this round? Points will be unlocked and recalculated when you close again.')) return;
+  const existing = STATE.scores[eventId] || { scores: [] };
+  const data = { ...existing, closed: false };
+  await dbSet('eventScores/' + eventId, data);
+  STATE.scores[eventId] = data;
+  showToast('Round reopened.');
+  selectedEventId = eventId;
+  renderAdminSection();
+  renderEvents();
+  renderLeaderboard();
+  renderTeams();
+}
+
+// ── ADMIN: HARD RESET ─────────────────────────────────────────────────────────
+function confirmHardReset() {
+  document.body.insertAdjacentHTML('beforeend', `
+    <div class="modal-overlay" id="reset-modal" style="display:flex;">
+      <div class="modal" style="max-width:420px;text-align:center;">
+        <div style="font-size:48px;margin-bottom:12px;">⚠️</div>
+        <div class="modal-title" style="color:var(--red);">Hard Reset</div>
+        <div style="color:var(--muted);font-size:13px;margin-bottom:20px;line-height:1.6;">
+          This will permanently delete ALL data including players, teams, schedule, scores, and points. This action cannot be undone.
+        </div>
+        <div style="color:var(--text);font-size:13px;margin-bottom:16px;">Type <strong>RESET</strong> to confirm:</div>
+        <input class="admin-input" id="reset-confirm-input" placeholder="RESET" style="text-align:center;">
+        <div class="modal-actions" style="margin-top:16px;">
+          <button class="admin-btn-secondary" onclick="closeModal('reset-modal')">Cancel</button>
+          <button class="danger-btn" onclick="executeHardReset()">Reset Everything</button>
+        </div>
+      </div>
+    </div>`);
+}
+
+async function executeHardReset() {
+  const input = document.getElementById('reset-confirm-input').value.trim();
+  if (input !== 'RESET') { alert('Please type RESET to confirm'); return; }
+
+  // Delete all collections
+  const colls = ['players','teams','schedule','payouts','eventScores','meta'];
+  for (const coll of colls) {
+    const snap = await getDocs(collection(db, coll));
+    const batch = writeBatch(db);
+    snap.docs.forEach(d => batch.delete(d.ref));
+    await batch.commit();
+  }
+
+  STATE = { players:[], teams:[], schedule:[], payouts:{}, scores:{}, loaded:true };
+  closeModal('reset-modal');
+  showToast('Hard reset complete. Start fresh!');
+  renderLeaderboard();
+  renderTeams();
+  renderEvents();
+  renderAdmin();
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+function closeModal(id) { const el = document.getElementById(id); if (el) { el.style.display='none'; el.innerHTML=''; } }
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.classList.add('show'), 10);
+  setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 300); }, 2500);
+}
+
+// ── NAV ───────────────────────────────────────────────────────────────────────
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  if (btn) btn.classList.add('active');
+}
+
+function checkAdminPw() {
+  const pw = document.getElementById('admin-pw').value;
+  if (pw === ADMIN_PASSWORD) {
+    adminUnlocked = true;
+    renderAdmin();
+  } else {
+    document.getElementById('pw-error').style.display = 'block';
+  }
+}
+
+// ── BOOT ──────────────────────────────────────────────────────────────────────
+async function boot() {
+  try {
+    await initializeData();
+    await loadState();
+    renderLeaderboard();
+    renderTeams();
+    renderEvents();
+    renderAdmin();
+  } catch(e) {
+    console.error('Boot error:', e);
+    document.getElementById('lb-content').innerHTML = errorHtml(e);
+  }
+}
+
+boot();
+</script>
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0a0f0d; --surface: #111914; --surface2: #182018; --surface3: #1e2a1e;
+    --border: rgba(255,255,255,0.07); --border2: rgba(255,255,255,0.14);
+    --text: #e8ede8; --muted: #7a8f7a; --accent: #4ade80;
+    --gold: #fbbf24; --silver: #94a3b8; --bronze: #c97c3a;
+    --blue: #60a5fa; --red: #f87171;
+    --font-display: 'Bebas Neue', sans-serif; --font-body: 'DM Sans', sans-serif;
+  }
+  html, body { background: var(--bg); color: var(--text); font-family: var(--font-body); min-height: 100vh; font-size: 14px; line-height: 1.5; }
+
+  /* ── HEADER ── */
+  .header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 32px; display: flex; align-items: center; justify-content: space-between; height: 64px; position: sticky; top: 0; z-index: 100; }
+  .logo { font-family: var(--font-display); font-size: 30px; letter-spacing: 4px; color: var(--accent); line-height: 1; user-select: none; }
+  .logo-sub { color: var(--muted); font-size: 11px; font-family: var(--font-body); letter-spacing: 2px; font-weight: 300; display: block; margin-top: -3px; }
+  .nav { display: flex; gap: 4px; }
+  .nav-btn { background: none; border: none; color: var(--muted); font-family: var(--font-body); font-size: 13px; font-weight: 500; padding: 8px 18px; border-radius: 8px; cursor: pointer; letter-spacing: 0.5px; transition: all 0.15s; }
+  .nav-btn:hover { color: var(--text); background: var(--surface2); }
+  .nav-btn.active { color: var(--accent); background: rgba(74,222,128,0.1); }
+  .nav-btn.admin-nav { color: var(--muted); border: 1px solid var(--border); }
+  .nav-btn.admin-nav.active { color: var(--red); background: rgba(248,113,113,0.08); border-color: rgba(248,113,113,0.2); }
+  .live-badge { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; color: var(--accent); background: rgba(74,222,128,0.1); border: 1px solid rgba(74,222,128,0.2); border-radius: 20px; padding: 5px 14px; letter-spacing: 1.5px; }
+  .live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* ── PAGES ── */
+  .page { display: none; padding: 32px; max-width: 1140px; margin: 0 auto; }
+  .page.active { display: block; }
+  .page.admin-page { max-width: 100%; padding: 0; }
+  .page.admin-page.active { display: flex; flex-direction: column; }
+
+  /* ── STAT CARDS ── */
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 28px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; }
+  .stat-label { font-size: 10px; color: var(--muted); font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }
+  .stat-value { font-family: var(--font-display); font-size: 36px; color: var(--text); letter-spacing: 1px; line-height: 1; }
+  .stat-sub { font-size: 11px; color: var(--muted); margin-top: 5px; }
+
+  /* ── SECTION HEADERS ── */
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .section-title { font-family: var(--font-display); font-size: 22px; letter-spacing: 3px; color: var(--text); }
+  .refresh-btn { background: none; border: 1px solid var(--border); color: var(--muted); font-family: var(--font-body); font-size: 12px; padding: 6px 14px; border-radius: 6px; cursor: pointer; transition: all 0.15s; }
+  .refresh-btn:hover { color: var(--text); border-color: var(--border2); }
+
+  /* ── LEADERBOARD ── */
+  .lb-table { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+  .lb-head { display: grid; grid-template-columns: 56px 1fr 110px 80px; padding: 11px 18px; background: var(--surface2); border-bottom: 1px solid var(--border); font-size: 10px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); }
+  .lb-row { display: grid; grid-template-columns: 56px 1fr 110px 80px; padding: 13px 18px; border-bottom: 1px solid var(--border); align-items: center; transition: background 0.1s; }
+  .lb-row:last-child { border-bottom: none; }
+  .lb-row:hover { background: var(--surface2); }
+  .lb-row.gold-row { background: rgba(251,191,36,0.05); }
+  .lb-row.silver-row { background: rgba(148,163,184,0.04); }
+  .lb-row.bronze-row { background: rgba(201,124,58,0.04); }
+  .team-lb-head { display: grid; grid-template-columns: 56px 1fr 110px 70px; padding: 11px 18px; background: var(--surface2); border-bottom: 1px solid var(--border); font-size: 10px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); }
+  .team-lb-row { display: grid; grid-template-columns: 56px 1fr 110px 70px; padding: 13px 18px; border-bottom: 1px solid var(--border); align-items: center; transition: background 0.1s; }
+  .team-lb-row:last-child { border-bottom: none; }
+  .team-lb-row:hover { background: var(--surface2); }
+  .team-lb-row.gold-row { background: rgba(251,191,36,0.05); }
+  .team-lb-row.silver-row { background: rgba(148,163,184,0.04); }
+  .team-lb-row.bronze-row { background: rgba(201,124,58,0.04); }
+
+  /* ── RANK BADGES ── */
+  .rank-badge { width: 30px; height: 30px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 16px; }
+  .rank-1 { background: rgba(251,191,36,0.18); color: var(--gold); }
+  .rank-2 { background: rgba(148,163,184,0.15); color: var(--silver); }
+  .rank-3 { background: rgba(201,124,58,0.15); color: var(--bronze); }
+  .rank-n { background: var(--surface3); color: var(--muted); font-size: 13px; }
+
+  .player-name { font-weight: 500; font-size: 14px; }
+  .player-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .pts-num { font-family: var(--font-display); font-size: 22px; color: var(--accent); text-align: right; }
+  .pts-zero { color: var(--muted) !important; }
+  .col-r { text-align: right; }
+  .col-muted { color: var(--muted); font-size: 12px; text-align: right; }
+
+  /* ── EVENTS ── */
+  .events-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+  .event-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; cursor: pointer; transition: border-color 0.15s, transform 0.15s; }
+  .event-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+  .event-card.upcoming { opacity: 0.6; }
+  .ecard-head { padding: 14px 16px 11px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+  .ecard-name { font-weight: 600; font-size: 14px; line-height: 1.3; }
+  .ecard-course { font-size: 11px; color: var(--muted); margin-top: 3px; }
+  .ecard-body { padding: 12px 16px 14px; }
+  .type-badge { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 3px 9px; border-radius: 5px; white-space: nowrap; flex-shrink: 0; }
+  .tb-regular { background: rgba(74,222,128,0.12); color: #4ade80; }
+  .tb-major { background: rgba(251,191,36,0.14); color: var(--gold); }
+  .tb-scramble { background: rgba(96,165,250,0.12); color: var(--blue); }
+  .tb-championship { background: rgba(248,113,113,0.12); color: var(--red); }
+  .tb-upcoming { background: rgba(255,255,255,0.06); color: var(--muted); }
+  .tb-inprogress { background: rgba(251,191,36,0.12); color: var(--gold); animation: badge-pulse 2s ease-in-out infinite; }
+  @keyframes badge-pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+  .podium-row { display: flex; align-items: center; gap: 0; font-size: 12px; padding: 3px 0; }
+  .podium-pos { color: var(--muted); font-weight: 600; width: 28px; flex-shrink: 0; }
+  .podium-name { flex: 1; }
+  .podium-score { color: var(--muted); margin-right: 8px; font-size: 11px; }
+  .upcoming-label { font-size: 12px; color: var(--muted); }
+  .upcoming-label strong { color: var(--text); font-weight: 500; }
+
+  /* ── EVENT DETAIL ── */
+  .back-btn { background: none; border: 1px solid var(--border); color: var(--muted); font-family: var(--font-body); font-size: 13px; padding: 7px 16px; border-radius: 8px; cursor: pointer; margin-bottom: 24px; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s; }
+  .back-btn:hover { color: var(--text); border-color: var(--border2); }
+  .detail-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 24px; gap: 16px; }
+  .detail-title { font-family: var(--font-display); font-size: 36px; letter-spacing: 3px; line-height: 1; }
+  .detail-sub { font-size: 13px; color: var(--muted); margin-top: 7px; }
+  .detail-table { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; width: 100%; margin-bottom: 28px; }
+  .dt-head { display: grid; padding: 11px 18px; background: var(--surface2); border-bottom: 1px solid var(--border); font-size: 10px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); }
+  .dt-row { display: grid; padding: 12px 18px; border-bottom: 1px solid var(--border); align-items: center; transition: background 0.1s; }
+  .dt-row:last-child { border-bottom: none; }
+  .dt-row:hover { background: var(--surface2); }
+  .dt-row.dnp { opacity: 0.38; }
+  .indiv-grid { grid-template-columns: 56px 1fr 70px 90px 70px; }
+  .score-num { font-family: var(--font-display); font-size: 22px; text-align: right; }
+
+  /* ── LOADING / ERROR ── */
+  .loading-state { display: flex; align-items: center; justify-content: center; padding: 80px 24px; flex-direction: column; gap: 18px; color: var(--muted); font-size: 13px; }
+  .spinner { width: 34px; height: 34px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.75s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .error-box { background: rgba(248,113,113,0.07); border: 1px solid rgba(248,113,113,0.2); border-radius: 12px; padding: 22px 24px; color: var(--red); font-size: 13px; line-height: 1.7; }
+
+  /* ── ADMIN LOCK ── */
+  .admin-lock { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; gap: 12px; }
+  .lock-icon { font-size: 48px; }
+  .lock-title { font-family: var(--font-display); font-size: 28px; letter-spacing: 2px; }
+  .lock-sub { color: var(--muted); font-size: 13px; }
+  .lock-form { display: flex; gap: 10px; margin-top: 8px; }
+
+  /* ── ADMIN LAYOUT ── */
+  .admin-layout { display: flex; min-height: calc(100vh - 64px); }
+  .admin-sidebar { width: 220px; background: var(--surface); border-right: 1px solid var(--border); padding: 24px 16px; display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; }
+  .admin-nav-label { font-size: 10px; font-weight: 600; letter-spacing: 1.5px; color: var(--muted); text-transform: uppercase; padding: 0 8px; margin-bottom: 8px; }
+  .admin-nav-btn { background: none; border: none; color: var(--muted); font-family: var(--font-body); font-size: 13px; font-weight: 500; padding: 10px 12px; border-radius: 8px; cursor: pointer; text-align: left; transition: all 0.15s; }
+  .admin-nav-btn:hover { color: var(--text); background: var(--surface2); }
+  .admin-nav-btn.active { color: var(--accent); background: rgba(74,222,128,0.1); }
+  .admin-main { flex: 1; padding: 28px 32px; overflow-y: auto; }
+  .admin-section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .admin-section-title { font-family: var(--font-display); font-size: 22px; letter-spacing: 2px; }
+
+  /* ── ADMIN TABLE ── */
+  .admin-table { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 24px; }
+  .admin-table-head { display: grid; padding: 10px 16px; background: var(--surface2); border-bottom: 1px solid var(--border); font-size: 10px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); }
+  .admin-table-row { display: grid; padding: 12px 16px; border-bottom: 1px solid var(--border); align-items: center; transition: background 0.1s; }
+  .admin-table-row:last-child { border-bottom: none; }
+  .admin-table-row:hover { background: var(--surface2); }
+
+  /* ── ADMIN FORMS ── */
+  .admin-input { background: var(--surface2); border: 1px solid var(--border2); color: var(--text); font-family: var(--font-body); font-size: 13px; padding: 9px 12px; border-radius: 8px; width: 100%; outline: none; transition: border-color 0.15s; }
+  .admin-input:focus { border-color: var(--accent); }
+  .admin-select { background: var(--surface2); border: 1px solid var(--border2); color: var(--text); font-family: var(--font-body); font-size: 13px; padding: 9px 12px; border-radius: 8px; width: 100%; outline: none; cursor: pointer; }
+  .admin-btn-primary { background: var(--accent); color: #0a0f0d; font-family: var(--font-body); font-size: 13px; font-weight: 600; padding: 9px 18px; border: none; border-radius: 8px; cursor: pointer; transition: opacity 0.15s; white-space: nowrap; }
+  .admin-btn-primary:hover { opacity: 0.85; }
+  .admin-btn-secondary { background: var(--surface2); color: var(--text); font-family: var(--font-body); font-size: 13px; font-weight: 500; padding: 9px 18px; border: 1px solid var(--border2); border-radius: 8px; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+  .admin-btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+  .danger-btn { background: rgba(248,113,113,0.1); color: var(--red); font-family: var(--font-body); font-size: 13px; font-weight: 500; padding: 9px 18px; border: 1px solid rgba(248,113,113,0.2); border-radius: 8px; cursor: pointer; width: 100%; transition: all 0.15s; }
+  .danger-btn:hover { background: rgba(248,113,113,0.2); }
+  .icon-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--muted); font-size: 12px; padding: 5px 10px; border-radius: 6px; cursor: pointer; transition: all 0.15s; white-space: nowrap; font-family: var(--font-body); }
+  .icon-btn:hover { color: var(--text); border-color: var(--border2); }
+  .icon-btn.danger:hover { color: var(--red); border-color: rgba(248,113,113,0.3); }
+  .icon-btn.sm { padding: 3px 7px; font-size: 11px; }
+
+  /* ── MODAL ── */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 200; padding: 20px; }
+  .modal { background: var(--surface); border: 1px solid var(--border2); border-radius: 14px; padding: 28px; width: 100%; max-width: 380px; display: flex; flex-direction: column; gap: 12px; }
+  .modal-title { font-family: var(--font-display); font-size: 22px; letter-spacing: 2px; margin-bottom: 4px; }
+  .modal-label { font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 8px; }
+
+  /* ── TEAM ADMIN ── */
+  .team-admin-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 12px; }
+  .team-admin-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid var(--border); }
+  .team-members-list { padding: 10px 16px; display: flex; flex-direction: column; gap: 6px; }
+  .team-member-row { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+  .team-member-row span:first-child { flex: 1; }
+
+  /* ── TEE BADGES ── */
+  .tee-badge { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 4px; letter-spacing: 0.5px; }
+  .tee-blues { background: rgba(96,165,250,0.15); color: var(--blue); }
+  .tee-whites { background: rgba(255,255,255,0.1); color: #e2e8f0; }
+  .tee-reds { background: rgba(248,113,113,0.15); color: var(--red); }
+
+  /* ── PAYOUTS ── */
+  .payout-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+  .payout-title { font-family: var(--font-display); font-size: 18px; letter-spacing: 1px; margin-bottom: 12px; }
+  .payout-table-head { display: flex; justify-content: space-between; font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; padding: 0 4px; }
+  .payout-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 0; }
+  .payout-input { background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-family: var(--font-body); font-size: 13px; padding: 6px 10px; border-radius: 6px; width: 80px; text-align: right; outline: none; }
+  .payout-input:focus { border-color: var(--accent); }
+
+  /* ── SCORES ── */
+  .score-event-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 4px; flex-wrap: wrap; gap: 12px; }
+  .score-input { background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-family: var(--font-display); font-size: 18px; padding: 5px 10px; border-radius: 6px; width: 80px; text-align: right; outline: none; }
+  .score-input:focus { border-color: var(--accent); }
+
+  /* ── TOAST ── */
+  .toast { position: fixed; bottom: 24px; right: 24px; background: var(--surface); border: 1px solid var(--accent); color: var(--accent); font-size: 13px; font-weight: 500; padding: 12px 20px; border-radius: 10px; z-index: 300; opacity: 0; transform: translateY(8px); transition: all 0.25s; pointer-events: none; }
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 700px) {
+    .header { padding: 0 16px; height: auto; flex-wrap: wrap; padding-top: 10px; padding-bottom: 10px; }
+    .logo { font-size: 20px; letter-spacing: 2px; }
+    .live-badge { display: none; }
+    .nav { width: 100%; order: 3; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 6px; gap: 2px; scrollbar-width: none; }
+    .nav::-webkit-scrollbar { display: none; }
+    .nav-btn { padding: 7px 12px; font-size: 12px; white-space: nowrap; flex-shrink: 0; }
+    .page { padding: 16px; }
+    .stats-row { grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px; }
+    .lb-head, .lb-row { grid-template-columns: 44px 1fr 80px; }
+    .lb-head > *:nth-child(4), .lb-row > *:nth-child(4) { display: none; }
+    .team-lb-head, .team-lb-row { grid-template-columns: 44px 1fr 80px; }
+    .team-lb-head > *:nth-child(4), .team-lb-row > *:nth-child(4) { display: none; }
+    .events-grid { grid-template-columns: 1fr; }
+    .indiv-grid { grid-template-columns: 44px 1fr 80px 60px; }
+    .indiv-grid > *:nth-child(3) { display: none; }
+    .admin-layout { flex-direction: column; }
+    .admin-sidebar { width: 100%; flex-direction: row; overflow-x: auto; padding: 12px; gap: 6px; border-right: none; border-bottom: 1px solid var(--border); }
+    .admin-nav-label { display: none; }
+    .admin-nav-btn { white-space: nowrap; flex-shrink: 0; padding: 8px 12px; }
+    .admin-main { padding: 16px; }
+  }
+
+  @media (max-width: 480px) {
+    .logo { font-size: 18px; letter-spacing: 1px; }
+    .stats-row { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .stat-value { font-size: 26px; }
+    .lb-head, .lb-row { grid-template-columns: 38px 1fr 70px; padding: 10px 12px; }
+    .rank-badge { width: 26px; height: 26px; font-size: 13px; }
+    .pts-num { font-size: 18px; }
+    .detail-title { font-size: 26px; }
+    .detail-header { flex-direction: column; gap: 10px; margin-bottom: 16px; }
+    .indiv-grid { grid-template-columns: 38px 1fr 70px 55px; padding: 10px 12px; }
+    .score-num { font-size: 18px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo">THE AMATOUR <span class="logo-sub">2026 SEASON</span></div>
+  <nav class="nav">
+    <button class="nav-btn active" onclick="showPage('leaderboard',this)">Individual Standings</button>
+    <button class="nav-btn" onclick="showPage('teams',this)">Team Standings</button>
+    <button class="nav-btn" onclick="showPage('events',this)">Events</button>
+    <button class="nav-btn admin-nav" onclick="showPage('admin',this);renderAdmin()">Admin</button>
+  </nav>
+  <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+</header>
+
+<main>
+  <div id="page-leaderboard" class="page active">
+    <div id="lb-content"><div class="loading-state"><div class="spinner"></div><span>Loading...</span></div></div>
+  </div>
+  <div id="page-teams" class="page">
+    <div id="teams-content"><div class="loading-state"><div class="spinner"></div><span>Loading...</span></div></div>
+  </div>
+  <div id="page-events" class="page">
+    <div id="events-content"><div class="loading-state"><div class="spinner"></div><span>Loading...</span></div></div>
+  </div>
+  <div id="page-admin" class="page admin-page">
+    <div id="admin-content"><div class="loading-state"><div class="spinner"></div><span>Loading...</span></div></div>
+  </div>
+</main>
+
+</body>
+</html>
