@@ -1118,6 +1118,39 @@ function checkAdminPw() {
   }
 }
 
+// ── EXPOSE GLOBALS ── Must be set synchronously, before any user interaction ──
+window.showPage            = showPage;
+window.checkAdminPw        = checkAdminPw;
+window.renderAdmin         = renderAdmin;
+window.renderLeaderboard   = renderLeaderboard;
+window.renderTeams         = renderTeams;
+window.renderEvents        = renderEvents;
+window.switchAdminSection  = switchAdminSection;
+window.showAddPlayerModal  = showAddPlayerModal;
+window.showEditPlayerModal = showEditPlayerModal;
+window.savePlayer          = savePlayer;
+window.confirmDeletePlayer = confirmDeletePlayer;
+window.closeModal          = closeModal;
+window.showAddTeamModal    = showAddTeamModal;
+window.saveNewTeam         = saveNewTeam;
+window.showAddToTeamModal  = showAddToTeamModal;
+window.addToTeam           = addToTeam;
+window.removeFromTeam      = removeFromTeam;
+window.confirmDeleteTeam   = confirmDeleteTeam;
+window.showEventModal      = showEventModal;
+window.saveEvent           = saveEvent;
+window.confirmDeleteEvent  = confirmDeleteEvent;
+window.renderPayoutsSection = renderPayoutsSection;
+window.addPayoutRow        = addPayoutRow;
+window.savePayouts         = savePayouts;
+window.selectScoringEvent  = selectScoringEvent;
+window.saveScores          = saveScores;
+window.closeRound          = closeRound;
+window.reopenRound         = reopenRound;
+window.confirmHardReset    = confirmHardReset;
+window.executeHardReset    = executeHardReset;
+window.showEventDetail     = showEventDetail;
+
 // ── BOOT ──────────────────────────────────────────────────────────────────────
 async function boot() {
   try {
