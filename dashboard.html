@@ -258,6 +258,14 @@ function assignRanks(arr, key) {
 }
 
 // Build individual standings from all closed events
+function getPct(payoutTable, pos) {
+  // pos is 1-based group number. Find the matching payout entry.
+  const entry = payoutTable.find(r => r.pos === pos);
+  if (entry) return entry.pct;
+  // Fallback: use array index (pos-1)
+  return payoutTable[pos - 1] ? payoutTable[pos - 1].pct : 0;
+}
+
 function buildStandings() {
   const totals = {};
   STATE.players.forEach(p => { totals[p.id] = { name: p.name, points: 0 }; });
@@ -266,7 +274,7 @@ function buildStandings() {
     if (!eventData.closed) continue;
     const ev = STATE.schedule.find(e => e.id === eventId);
     if (!ev) continue;
-    const payoutTable = STATE.payouts[ev.type] || [];
+    const payoutTable = STATE.payouts[ev.type] || STATE.payouts.regular || [];
     const sorted = [...(eventData.scores || [])].filter(s => s.gross !== null).sort((a,b) => a.gross - b.gross);
     const ranked = assignPositions(sorted);
 
@@ -275,7 +283,7 @@ function buildStandings() {
       if (s.gross === null) continue;
       const entry = ranked.find(r => r.playerId === s.playerId);
       if (!entry) continue;
-      const pct = payoutTable[entry.pos - 1] ? payoutTable[entry.pos - 1].pct : 0;
+      const pct = getPct(payoutTable, entry.pos);
       totals[s.playerId].points += Math.round(ev.purse * pct / 100);
     }
   }
@@ -308,12 +316,12 @@ function buildTeamStandings() {
     }).filter(t => t.gross !== null).sort((a,b) => a.gross - b.gross);
 
     const ranked = assignPositions(teamScores);
-    // Team payout: use scramble table or regular based on event
-    const payoutTable = STATE.payouts.scramble || [];
+    // Team payout: use the event's type payout table
+    const payoutTable = STATE.payouts[ev.type] || STATE.payouts.regular || [];
 
     for (const ts of ranked) {
       if (!totals[ts.teamId]) continue;
-      const pct = payoutTable[ts.pos - 1] ? payoutTable[ts.pos - 1].pct : 0;
+      const pct = getPct(payoutTable, ts.pos);
       const pts = Math.round(ev.purse * pct / 100);
       totals[ts.teamId].points += pts;
       if (ts.pos === 1) totals[ts.teamId].wins++;
@@ -478,7 +486,7 @@ function showEventDetail(eventId) {
     const r = ranked.find(r => r.playerId === s.playerId);
     let pts = 0;
     if (eventData.closed && r) {
-      const pct = payoutTable[r.pos-1] ? payoutTable[r.pos-1].pct : 0;
+      const pct = getPct(payoutTable, r.pos);
       pts = Math.round(ev.purse * pct / 100);
     }
     return { ...s, pos: r ? r.pos : null, tied: r ? r.tied : false, points: pts };
@@ -636,6 +644,8 @@ async function savePlayer(id) {
   closeModal('player-modal');
   renderAdminSection();
   renderLeaderboard();
+  renderTeams();
+  renderEvents();
 }
 
 async function confirmDeletePlayer(id) {
@@ -652,6 +662,8 @@ async function confirmDeletePlayer(id) {
   }
   renderAdminSection();
   renderLeaderboard();
+  renderTeams();
+  renderEvents();
 }
 
 // ── ADMIN: TEAMS ──────────────────────────────────────────────────────────────
@@ -721,6 +733,8 @@ async function saveNewTeam() {
   STATE.teams.sort((a,b) => a.name.localeCompare(b.name));
   closeModal('team-modal');
   renderAdminSection();
+  renderTeams();
+  renderLeaderboard();
 }
 
 function showAddToTeamModal(teamId) {
@@ -754,6 +768,7 @@ async function addToTeam(teamId) {
   closeModal('team-modal');
   renderAdminSection();
   renderTeams();
+  renderLeaderboard();
 }
 
 async function removeFromTeam(teamId, playerId) {
@@ -762,6 +777,7 @@ async function removeFromTeam(teamId, playerId) {
   await dbSet('teams/' + teamId, { name: team.name, playerIds: team.playerIds });
   renderAdminSection();
   renderTeams();
+  renderLeaderboard();
 }
 
 async function confirmDeleteTeam(teamId) {
@@ -771,6 +787,7 @@ async function confirmDeleteTeam(teamId) {
   STATE.teams = STATE.teams.filter(t => t.id !== teamId);
   renderAdminSection();
   renderTeams();
+  renderLeaderboard();
 }
 
 // ── ADMIN: SCHEDULE ───────────────────────────────────────────────────────────
@@ -857,6 +874,8 @@ async function saveEvent(id) {
   closeModal('event-modal');
   renderAdminSection();
   renderEvents();
+  renderLeaderboard();
+  renderTeams();
 }
 
 async function confirmDeleteEvent(id) {
@@ -868,6 +887,8 @@ async function confirmDeleteEvent(id) {
   delete STATE.scores[id];
   renderAdminSection();
   renderEvents();
+  renderLeaderboard();
+  renderTeams();
 }
 
 // ── ADMIN: PAYOUTS ────────────────────────────────────────────────────────────
@@ -885,8 +906,8 @@ function renderPayoutsSection(el) {
           <div class="payout-title">${type.charAt(0).toUpperCase()+type.slice(1)} Events</div>
           <div class="payout-table-head"><span>Place</span><span>Pct %</span></div>
           ${rows.map((r,i) => `<div class="payout-row">
-            <span style="color:var(--muted);">${i+1}${['st','nd','rd'][i]||'th'}</span>
-            <input class="payout-input" id="pct-${type}-${i}" type="number" value="${r.pct}" min="0" max="100" step="0.1">
+            <span style="color:var(--muted);">${i+1}${i===0?'st':i===1?'nd':i===2?'rd':'th'} place</span>
+            <input class="payout-input" id="pct-${type}-${i}" type="number" value="${r.pct}" min="0" max="100" step="0.5">
           </div>`).join('')}
           <button class="icon-btn" style="margin-top:8px;width:100%;justify-content:center;" onclick="addPayoutRow('${type}')">+ Add Place</button>
         </div>`;
@@ -904,15 +925,19 @@ async function savePayouts() {
   const types = ['regular', 'major', 'scramble'];
   for (const type of types) {
     const rows = STATE.payouts[type] || [];
-    rows.forEach((r, i) => {
+    const updated = [];
+    for (let i = 0; i < rows.length; i++) {
       const input = document.getElementById(`pct-${type}-${i}`);
-      if (input) r.pct = parseFloat(input.value) || 0;
-    });
+      const pct = input ? parseFloat(input.value) || 0 : rows[i].pct;
+      updated.push({ pos: i + 1, pct });
+    }
+    STATE.payouts[type] = updated;
   }
   await dbSet('payouts/tables', STATE.payouts);
-  showToast('Payout tables saved!');
+  showToast('Payout tables saved! Standings updated.');
   renderLeaderboard();
   renderTeams();
+  renderEvents();
 }
 
 // ── ADMIN: SCORES ─────────────────────────────────────────────────────────────
@@ -1016,6 +1041,7 @@ async function saveScores(eventId) {
   renderScoresSection(document.getElementById('admin-section-content'));
   renderEvents();
   renderLeaderboard();
+  renderTeams();
 }
 
 async function closeRound(eventId) {
