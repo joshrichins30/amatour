@@ -447,7 +447,7 @@ function renderEventCard(ev) {
   const status     = getEventStatus(ev);
 
   if (hasClosed && hasScores) {
-    // Show completed podium
+    // Completed — show final podium with positions
     const sorted = [...(eventData.scores||[])].filter(s=>s.gross!==null).sort((a,b)=>a.gross-b.gross);
     const ranked = assignPositions(sorted);
     const top3   = ranked.slice(0,3);
@@ -462,10 +462,21 @@ function renderEventCard(ev) {
       </div>
     </div>`;
   } else if (hasScores && !hasClosed) {
-    // In progress with some scores
-    return `<div class="event-card upcoming" style="cursor:default;">
+    // In progress — show live scores sorted low to high, clickable
+    const sorted = [...(eventData.scores||[])].filter(s=>s.gross!==null).sort((a,b)=>a.gross-b.gross);
+    const top3   = sorted.slice(0,3);
+    const total  = sorted.length;
+    const totalPlayers = STATE.players.length;
+    return `<div class="event-card" onclick="showEventDetail('${ev.id}')">
       <div class="ecard-head"><div><div class="ecard-name">${ev.name}</div><div class="ecard-course">${ev.course}</div></div><span class="type-badge tb-inprogress">In Progress</span></div>
-      <div class="ecard-body"><div class="upcoming-label">Scores being collected...</div></div>
+      <div class="ecard-body">
+        ${top3.map((s, idx) => `<div class="podium-row">
+          <span class="podium-pos" style="color:var(--muted);">${idx+1}</span>
+          <span class="podium-name">${getPlayerName(s.playerId)}</span>
+          <span class="podium-score">${s.gross}</span>
+        </div>`).join('')}
+        <div style="font-size:11px;color:var(--muted);margin-top:6px;">${total} of ${totalPlayers} scores in</div>
+      </div>
     </div>`;
   } else {
     const inProgress = status === 'inprogress';
@@ -487,14 +498,15 @@ function showEventDetail(eventId) {
   const el        = document.getElementById('events-content');
   const payoutTable = STATE.payouts[ev.type] || [];
 
-  const allScores = [...(eventData.scores||[])].sort((a,b) => {
-    if (a.gross===null && b.gross===null) return 0;
-    if (a.gross===null) return 1;
-    if (b.gross===null) return -1;
-    return a.gross - b.gross;
-  });
+  // Sort: scored players low to high, unscored at bottom
+  const scored   = [...(eventData.scores||[])].filter(s=>s.gross!==null).sort((a,b)=>a.gross-b.gross);
+  const unscored = [...(eventData.scores||[])].filter(s=>s.gross===null);
+  // Include players not yet in scores at all
+  const scoredIds   = new Set((eventData.scores||[]).map(s=>s.playerId));
+  const notEntered  = STATE.players.filter(p=>!scoredIds.has(p.id)).map(p=>({playerId:p.id, gross:null}));
+  const allScores   = [...scored, ...unscored, ...notEntered];
 
-  const ranked = assignPositions(allScores.filter(s=>s.gross!==null));
+  const ranked = assignPositions(scored);
   const withPoints = allScores.map(s => {
     const r = ranked.find(r => r.playerId === s.playerId);
     let pts = 0;
@@ -505,18 +517,33 @@ function showEventDetail(eventId) {
     return { ...s, pos: r ? r.pos : null, tied: r ? r.tied : false, points: pts };
   });
 
+  const statusLabel = eventData.closed
+    ? `<span style="color:var(--accent);font-size:12px;font-weight:600;margin-left:12px;">✓ CLOSED</span>`
+    : scored.length > 0
+      ? `<span style="color:var(--gold);font-size:12px;font-weight:600;margin-left:12px;">● IN PROGRESS · ${scored.length} scores in</span>`
+      : '';
+
   el.innerHTML = `
     <button class="back-btn" onclick="renderEvents()">← Back to Events</button>
     <div class="detail-header">
-      <div><div class="detail-title">${ev.name.toUpperCase()}</div><div class="detail-sub">${ev.course} · Purse: ${ev.purse} pts</div></div>
+      <div>
+        <div style="display:flex;align-items:center;">
+          <div class="detail-title">${ev.name.toUpperCase()}</div>
+          ${statusLabel}
+        </div>
+        <div class="detail-sub">${ev.course} · Purse: ${ev.purse} pts</div>
+      </div>
       ${typeBadge(ev.type)}
     </div>
     <div class="detail-table">
       <div class="dt-head indiv-grid"><div>Pos</div><div>Player</div><div class="col-r">Tee</div><div class="col-r">Gross</div><div class="col-r">Pts</div></div>
       ${withPoints.map(s => {
         const dnp = s.gross === null;
+        const posDisplay = dnp
+          ? '<span style="color:var(--muted);font-size:11px;">—</span>'
+          : rankBadge(s.pos, s.tied);
         return `<div class="dt-row indiv-grid ${dnp?'dnp':''}">
-          <div>${dnp ? '<span style="color:var(--muted);font-size:11px;">—</span>' : rankBadge(s.pos, s.tied)}</div>
+          <div>${posDisplay}</div>
           <div class="player-name">${getPlayerName(s.playerId)}</div>
           <div class="col-r" style="color:var(--muted);font-size:12px;">${STATE.players.find(p=>p.id===s.playerId)?.tee||''}</div>
           <div class="col-r"><span class="score-num">${s.gross !== null ? s.gross : '—'}</span></div>
