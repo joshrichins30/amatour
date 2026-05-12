@@ -84,6 +84,7 @@ const SEED_SCHEDULE = [
 ];
 
 const SEED_PAYOUTS = {
+  // Individual payouts
   regular: [
     { pos: 1, pct: 20 }, { pos: 2, pct: 15 }, { pos: 3, pct: 13 },
     { pos: 4, pct: 11 }, { pos: 5, pct: 10 }, { pos: 6, pct: 9  },
@@ -98,6 +99,10 @@ const SEED_PAYOUTS = {
     { pos: 1, pct: 30 }, { pos: 2, pct: 25 }, { pos: 3, pct: 20 },
     { pos: 4, pct: 15 }, { pos: 5, pct: 10 },
   ],
+  // Team payouts (top 3 teams, applied to event purse)
+  team_regular:    [ { pos: 1, pct: 50 }, { pos: 2, pct: 30 }, { pos: 3, pct: 20 } ],
+  team_major:      [ { pos: 1, pct: 50 }, { pos: 2, pct: 30 }, { pos: 3, pct: 20 } ],
+  team_scramble:   [ { pos: 1, pct: 50 }, { pos: 2, pct: 30 }, { pos: 3, pct: 20 } ],
 };
 
 // April 1-15 scores (Event 1 - already played)
@@ -199,7 +204,13 @@ async function loadState() {
   STATE.players  = players.sort((a,b) => a.name.localeCompare(b.name));
   STATE.teams    = teams.sort((a,b) => a.name.localeCompare(b.name));
   STATE.schedule = schedule.sort((a,b) => a.start.localeCompare(b.start));
-  STATE.payouts  = payoutsDoc || SEED_PAYOUTS;
+  // Merge loaded payouts with seed defaults so new team payout keys are always present
+  const loadedPayouts = payoutsDoc || {};
+  STATE.payouts = { ...SEED_PAYOUTS, ...loadedPayouts };
+  // Ensure team payout keys exist even for existing databases
+  if (!STATE.payouts.team_regular) STATE.payouts.team_regular = SEED_PAYOUTS.team_regular;
+  if (!STATE.payouts.team_major)   STATE.payouts.team_major   = SEED_PAYOUTS.team_major;
+  if (!STATE.payouts.team_scramble) STATE.payouts.team_scramble = SEED_PAYOUTS.team_scramble;
   STATE.scores   = {};
   scoresSnap.docs.forEach(d => { STATE.scores[d.id] = d.data(); });
   STATE.loaded   = true;
@@ -311,13 +322,15 @@ function buildTeamStandings() {
         .filter(g => g !== null)
         .sort((a,b) => a - b);
       const best2 = memberScores.slice(0, 2);
-      const gross = best2.length === 2 ? best2[0] + best2[1] : (best2.length === 1 ? best2[0] : null);
+      // Require at least 2 scores to calculate team gross (best 2 of 3)
+      const gross = best2.length === 2 ? best2[0] + best2[1] : null;
       return { teamId: t.id, gross };
     }).filter(t => t.gross !== null).sort((a,b) => a.gross - b.gross);
 
     const ranked = assignPositions(teamScores);
-    // Team payout: use the event's type payout table
-    const payoutTable = STATE.payouts[ev.type] || STATE.payouts.regular || [];
+    // Team payout: use team_<type> payout table (top 3 teams only)
+    const teamPayoutKey = 'team_' + ev.type;
+    const payoutTable = STATE.payouts[teamPayoutKey] || STATE.payouts.team_regular || [];
 
     for (const ts of ranked) {
       if (!totals[ts.teamId]) continue;
@@ -893,20 +906,48 @@ async function confirmDeleteEvent(id) {
 
 // ── ADMIN: PAYOUTS ────────────────────────────────────────────────────────────
 function renderPayoutsSection(el) {
-  const types = ['regular', 'major', 'scramble'];
+  const indivTypes = ['regular', 'major', 'scramble'];
+  const teamTypes  = ['team_regular', 'team_major', 'team_scramble'];
+  const teamLabels = { team_regular: 'Regular', team_major: 'Major', team_scramble: 'Scramble' };
+
   el.innerHTML = `
     <div class="admin-section-header">
       <div class="admin-section-title">Payout Tables</div>
       <button class="admin-btn-primary" onclick="savePayouts()">💾 Save Changes</button>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;">
-      ${types.map(type => {
+
+    <div style="font-family:var(--font-display);font-size:16px;letter-spacing:2px;color:var(--accent);margin-bottom:12px;">
+      INDIVIDUAL PAYOUTS
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;margin-bottom:28px;">
+      ${indivTypes.map(type => {
         const rows = STATE.payouts[type] || [];
         return `<div class="payout-card">
           <div class="payout-title">${type.charAt(0).toUpperCase()+type.slice(1)} Events</div>
-          <div class="payout-table-head"><span>Place</span><span>Pct %</span></div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">Applied to individual player scores</div>
+          <div class="payout-table-head"><span>Place</span><span>% of Purse</span></div>
           ${rows.map((r,i) => `<div class="payout-row">
-            <span style="color:var(--muted);">${i+1}${i===0?'st':i===1?'nd':i===2?'rd':'th'} place</span>
+            <span style="color:var(--muted);">${i+1}${i===0?'st':i===1?'nd':i===2?'rd':'th'}</span>
+            <input class="payout-input" id="pct-${type}-${i}" type="number" value="${r.pct}" min="0" max="100" step="0.5">
+          </div>`).join('')}
+          <button class="icon-btn" style="margin-top:8px;width:100%;justify-content:center;" onclick="addPayoutRow('${type}')">+ Add Place</button>
+        </div>`;
+      }).join('')}
+    </div>
+
+    <div style="font-family:var(--font-display);font-size:16px;letter-spacing:2px;color:var(--gold);margin-bottom:12px;">
+      TEAM PAYOUTS
+    </div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:14px;">Top 3 teams per event. Best 2 of 3 player scores used to calculate team gross.</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;">
+      ${teamTypes.map(type => {
+        const rows = STATE.payouts[type] || [];
+        return `<div class="payout-card" style="border-color:rgba(251,191,36,0.15);">
+          <div class="payout-title" style="color:var(--gold);">${teamLabels[type]} Events</div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">Applied to team scores (best 2 of 3)</div>
+          <div class="payout-table-head"><span>Place</span><span>% of Purse</span></div>
+          ${rows.map((r,i) => `<div class="payout-row">
+            <span style="color:var(--muted);">${i+1}${i===0?'st':i===1?'nd':i===2?'rd':'th'}</span>
             <input class="payout-input" id="pct-${type}-${i}" type="number" value="${r.pct}" min="0" max="100" step="0.5">
           </div>`).join('')}
           <button class="icon-btn" style="margin-top:8px;width:100%;justify-content:center;" onclick="addPayoutRow('${type}')">+ Add Place</button>
@@ -918,11 +959,11 @@ function renderPayoutsSection(el) {
 function addPayoutRow(type) {
   STATE.payouts[type] = STATE.payouts[type] || [];
   STATE.payouts[type].push({ pos: STATE.payouts[type].length + 1, pct: 0 });
-  renderAdminSection();
+  renderPayoutsSection(document.getElementById('admin-section-content'));
 }
 
 async function savePayouts() {
-  const types = ['regular', 'major', 'scramble'];
+  const types = ['regular', 'major', 'scramble', 'team_regular', 'team_major', 'team_scramble'];
   for (const type of types) {
     const rows = STATE.payouts[type] || [];
     const updated = [];
@@ -1006,7 +1047,7 @@ function renderScoreEntry() {
           const ranked = assignPositions(sortedScores);
           const entry  = ranked.find(r => r.playerId === p.id);
           if (entry) {
-            const pct = payoutTable[entry.pos-1] ? payoutTable[entry.pos-1].pct : 0;
+            const pct = getPct(payoutTable, entry.pos);
             pts = Math.round(ev.purse * pct / 100);
           }
         }
