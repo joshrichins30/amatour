@@ -384,7 +384,7 @@ function renderLeaderboard() {
       </div>
       <div class="section-header">
         <div class="section-title">INDIVIDUAL STANDINGS</div>
-        <button class="refresh-btn" onclick="renderLeaderboard()">↺ Refresh</button>
+        <button class="refresh-btn" onclick="refreshData(['leaderboard'])">↺ Refresh</button>
       </div>
       <div class="lb-table">
         <div class="lb-head"><div>Rank</div><div>Player</div><div class="col-r">Points</div><div class="col-r">Tee</div></div>
@@ -407,7 +407,7 @@ function renderTeams() {
     el.innerHTML = `
       <div class="section-header">
         <div class="section-title">TEAM STANDINGS</div>
-        <button class="refresh-btn" onclick="renderTeams()">↺ Refresh</button>
+        <button class="refresh-btn" onclick="refreshData(['teams'])">↺ Refresh</button>
       </div>
       <div class="lb-table">
         <div class="team-lb-head"><div>Rank</div><div>Team</div><div class="col-r">Points</div><div class="col-r">Wins</div></div>
@@ -433,7 +433,7 @@ function renderEvents() {
   el.innerHTML = `
     <div class="section-header" style="margin-bottom:18px;">
       <div class="section-title">2026 SCHEDULE</div>
-      <button class="refresh-btn" onclick="renderEvents()">↺ Refresh</button>
+      <button class="refresh-btn" onclick="refreshData(['events'])">↺ Refresh</button>
     </div>
     <div class="events-grid">
       ${STATE.schedule.map((ev, i) => renderEventCard(ev)).join('')}
@@ -1185,8 +1185,31 @@ function checkAdminPw() {
   }
 }
 
+// ── REFRESH ──────────────────────────────────────────────────────────────────
+async function refreshData(sections) {
+  // Show subtle loading state on the button
+  const btn = document.activeElement;
+  if (btn) { btn.textContent = '↺ Loading...'; btn.disabled = true; }
+  try {
+    // Re-fetch everything from Firestore
+    await loadState();
+    // Re-render requested sections
+    if (!sections || sections.includes('leaderboard')) renderLeaderboard();
+    if (!sections || sections.includes('teams'))       renderTeams();
+    if (!sections || sections.includes('events'))      renderEvents();
+    if (!sections || sections.includes('admin'))       renderAdminSection();
+    showToast('Data refreshed!');
+  } catch(e) {
+    showToast('Refresh failed — check connection');
+    console.error(e);
+  } finally {
+    if (btn) { btn.textContent = '↺ Refresh'; btn.disabled = false; }
+  }
+}
+
 // ── EXPOSE GLOBALS ── Must be set synchronously, before any user interaction ──
 window.showPage            = showPage;
+window.refreshData         = refreshData;
 window.checkAdminPw        = checkAdminPw;
 window.renderAdmin         = renderAdmin;
 window.renderLeaderboard   = renderLeaderboard;
